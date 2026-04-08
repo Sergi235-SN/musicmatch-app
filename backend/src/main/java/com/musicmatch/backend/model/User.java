@@ -1,16 +1,12 @@
 package com.musicmatch.backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "User")
+@Table(name = "user")
 @Getter
 @Setter
 public class User {
@@ -27,5 +23,10 @@ public class User {
 
     @Column(nullable = false)
     private String password;
-    
+
+    @Column(name = "registration_date")
+    private LocalDateTime registrationDate = LocalDateTime.now();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Profile profile;
 }
