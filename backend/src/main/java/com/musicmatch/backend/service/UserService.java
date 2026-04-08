@@ -26,6 +26,10 @@ public class UserService {
             throw new RuntimeException("Email ya registrado");
         }
 
+        if(userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("Usuario ya registrado");
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());

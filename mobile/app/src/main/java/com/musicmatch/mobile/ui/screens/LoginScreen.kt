@@ -1,9 +1,10 @@
-package com.musicmatch.mobile.ui.screens.login
+package com.musicmatch.mobile.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,6 +17,7 @@ fun LoginScreen(
 ) {
     val email = viewModel.email.value
     val password = viewModel.password.value
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -41,10 +43,10 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = viewModel::onLoginClicked,
-            modifier = Modifier.fillMaxWidth()
+            onClick = { viewModel.onLoginClicked(context) {} },
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Iniciar sesión")
+            Text("Login")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

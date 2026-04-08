@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.musicmatch.mobile.ui.screens.LoginScreen
 import com.musicmatch.mobile.ui.screens.RegisterScreen
-import com.musicmatch.mobile.ui.screens.login.LoginScreen
 
 sealed class Screen(val route: String) {
     object Register : Screen("register")

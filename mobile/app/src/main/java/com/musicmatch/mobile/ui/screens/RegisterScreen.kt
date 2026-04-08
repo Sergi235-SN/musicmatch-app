@@ -18,7 +18,7 @@ fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
     onNavigateLogin: () -> Unit = {}
 ) {
-    val context = LocalContext.current // <--- Esto
+    val context = LocalContext.current
     val user = viewModel.user.value
 
     Column(

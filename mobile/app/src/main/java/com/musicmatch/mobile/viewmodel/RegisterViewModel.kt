@@ -46,11 +46,14 @@ class RegisterViewModel : ViewModel() {
                         password = currentUser.password
                     )
                 )
-                // Si todo salió bien
-                Toast.makeText(context, "Registro exitoso: ${response.username}", Toast.LENGTH_SHORT).show()
-                // Limpiar campos
-                user.value = User()
-                onSuccess()
+
+                if(response.success){
+                    Toast.makeText(context, "Bienvenido ${response.username}", Toast.LENGTH_SHORT).show()
+                    onSuccess()
+                }else{
+                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(context, "Error al registrar usuario", Toast.LENGTH_SHORT).show()
