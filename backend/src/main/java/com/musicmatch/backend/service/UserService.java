@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 
+import com.musicmatch.backend.dto.ApiResponse;
 import com.musicmatch.backend.dto.LoginRequest;
 import com.musicmatch.backend.dto.LoginResponse;
 import com.musicmatch.backend.dto.RegisterRequest;
@@ -20,14 +21,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserResponse register(RegisterRequest request) {
-
+    public ApiResponse<UserResponse> register(RegisterRequest request) {
         if(userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email ya registrado");
+            return new ApiResponse<>(false, "El email ya está registrado", null);
         }
 
         if(userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Usuario ya registrado");
+            return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
         }
 
         User user = new User();
@@ -37,19 +37,38 @@ public class UserService {
 
         User saved = userRepository.save(user);
 
-        return new UserResponse(saved.getId(), saved.getUsername(), saved.getEmail());
+        UserResponse response = new UserResponse(
+            saved.getId(),
+            saved.getUsername(),
+            saved.getEmail()
+        );
+
+        return new ApiResponse<>(true, "Usuario registrado correctamente", response);
     }
 
-    public LoginResponse login(LoginRequest request) {
-        return userRepository.findByEmail(request.getEmail())
-                .map(user -> {
-                    boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
-                    if(matches) {
-                        return new LoginResponse(true, "Login exitoso", user.getId(), user.getUsername());
-                    } else {
-                        return new LoginResponse(false, "Credenciales inválidas", null, null);
-                    }
-                })
-                .orElse(new LoginResponse(false, "Usuario no encontrado", null, null));
+    public ApiResponse<LoginResponse> login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+
+        if(user == null) {
+            return new ApiResponse<>(false, "Usuario no encontrado", null);
+        }
+
+        boolean matches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()
+        );
+
+        if(!matches) {
+            return new ApiResponse<>(false, "Credenciales inválidas", null);
+        }
+
+        LoginResponse data = new LoginResponse(
+                user.getId(),
+                user.getUsername()
+        );
+
+        return new ApiResponse<>(true, "Login exitoso", data);
     }
+
 }

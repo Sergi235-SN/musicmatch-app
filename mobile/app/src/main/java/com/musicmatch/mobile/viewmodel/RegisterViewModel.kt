@@ -47,10 +47,12 @@ class RegisterViewModel : ViewModel() {
                     )
                 )
 
-                if(response.success){
-                    Toast.makeText(context, "Bienvenido ${response.username}", Toast.LENGTH_SHORT).show()
+                if (response.success) {
+                    val username = response.data?.username ?: ""
+                    Toast.makeText(context, "Bienvenido $username", Toast.LENGTH_SHORT).show()
                     onSuccess()
-                }else{
+                    user.value = User()
+                } else {
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }
 

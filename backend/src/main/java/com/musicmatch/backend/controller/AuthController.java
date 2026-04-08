@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.musicmatch.backend.dto.ApiResponse;
 import com.musicmatch.backend.dto.LoginRequest;
 import com.musicmatch.backend.dto.LoginResponse;
 import com.musicmatch.backend.dto.RegisterRequest;
@@ -21,12 +22,12 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public UserResponse register(@RequestBody RegisterRequest request) {
+    public ApiResponse<UserResponse> register(@RequestBody RegisterRequest request) {
         return userService.register(request);
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
         return userService.login(request);
     }
 }

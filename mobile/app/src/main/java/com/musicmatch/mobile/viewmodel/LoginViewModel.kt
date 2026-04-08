@@ -43,12 +43,12 @@ class LoginViewModel : ViewModel() {
                 )
 
                 if(response.success){
-                    Toast.makeText(context, "Bienvenido ${response.username}", Toast.LENGTH_SHORT).show()
+                    val username = response.data?.username ?: ""
+                    Toast.makeText(context, "Bienvenido $username", Toast.LENGTH_SHORT).show()
                     onSuccess()
                 }else{
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }
-
             } catch (e: Exception){
                 e.printStackTrace()
                 Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()

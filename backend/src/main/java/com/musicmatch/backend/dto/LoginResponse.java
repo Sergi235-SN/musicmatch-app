@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class LoginResponse {
-    private boolean success;
-    private String message;
-    private Long id;          
-    private String username; 
+
+    private Long id;
+    private String username;
+
 }
