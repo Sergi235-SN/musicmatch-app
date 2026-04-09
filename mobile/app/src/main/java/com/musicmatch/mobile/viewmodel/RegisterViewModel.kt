@@ -1,6 +1,7 @@
 package com.musicmatch.mobile.viewmodel
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -9,10 +10,12 @@ import com.musicmatch.mobile.data.ApiService
 import com.musicmatch.mobile.data.repository.UserRepository
 import com.musicmatch.mobile.model.dto.RegisterRequest
 import com.musicmatch.mobile.model.User
+import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.launch
 
 class RegisterViewModel : ViewModel() {
 
+    private val tokenManager = TokenManager()
     var user = mutableStateOf(User())
         private set
 
@@ -47,11 +50,12 @@ class RegisterViewModel : ViewModel() {
                     )
                 )
 
-                if (response.success) {
-                    val username = response.data?.username ?: ""
-                    Toast.makeText(context, "Bienvenido $username", Toast.LENGTH_SHORT).show()
+                if(response.success && response.data != null){
+                    val token = response.data.token ?: ""
+                    tokenManager.saveToken(context, token)
+
+                    Toast.makeText(context, "Registro exitoso, bienvenido ${response.data.username}", Toast.LENGTH_SHORT).show()
                     onSuccess()
-                    user.value = User()
                 } else {
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }

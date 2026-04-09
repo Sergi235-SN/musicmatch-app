@@ -22,7 +22,9 @@ public class Profile {
     @Column(columnDefinition = "TEXT")
     private String biography;
 
-    private String location;
+    @ManyToOne
+    @JoinColumn(name = "city_id")
+    private City city;
 
     @Column(name = "profile_picture_url")
     private String profilePicture;

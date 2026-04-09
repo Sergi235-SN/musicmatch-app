@@ -5,11 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserResponse {
-
+public class UserBasicResponse {
     private Long id;
     private String username;
-    private String email;
-    private String token;
-    
 }
