@@ -8,11 +8,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.musicmatch.backend.dto.ApiResponse;
+import com.musicmatch.backend.dto.InstrumentLevelResponse;
 import com.musicmatch.backend.dto.LoginRequest;
 import com.musicmatch.backend.dto.LoginResponse;
 import com.musicmatch.backend.dto.RegisterRequest;
-import com.musicmatch.backend.dto.UserBasicResponse;
+import com.musicmatch.backend.dto.UserProfileResponse;
 import com.musicmatch.backend.dto.UserResponse;
+import com.musicmatch.backend.model.Profile;
+import com.musicmatch.backend.model.Style;
 import com.musicmatch.backend.model.User;
 import com.musicmatch.backend.repository.UserRepository;
 import com.musicmatch.backend.service.UserService;
@@ -40,22 +43,49 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ApiResponse<UserBasicResponse> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+    public ApiResponse<UserProfileResponse> getCurrentUser(
+            @RequestHeader("Authorization") String authHeader) {
+
         String token = authHeader.replace("Bearer ", "");
-        
+
         if (!jwtUtil.isTokenValid(token)) {
             return new ApiResponse<>(false, "Token inválido", null);
         }
 
         Long userId = jwtUtil.extractUserId(token);
+
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             return new ApiResponse<>(false, "Usuario no encontrado", null);
         }
 
-        UserBasicResponse response = new UserBasicResponse(
-            user.getId(),
-            user.getUsername()
+        Profile profile = user.getProfile();
+
+        UserProfileResponse response = new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+
+                profile.getBiography(),
+
+                profile.getCity() != null ? profile.getCity().getId() : null,
+                profile.getCity() != null ? profile.getCity().getName() : null,
+
+                profile.getExperienceLevel(),
+
+                profile.getStyles()
+                        .stream()
+                        .map(Style::getId)
+                        .toList(),
+
+                profile.getProfileInstruments()
+                        .stream()
+                        .map(pi -> new InstrumentLevelResponse(
+                                pi.getInstrument().getId(),
+                                pi.getLevel()
+                        ))
+                        .toList(),
+
+                profile.getProfilePicture()
         );
 
         return new ApiResponse<>(true, "Usuario encontrado", response);

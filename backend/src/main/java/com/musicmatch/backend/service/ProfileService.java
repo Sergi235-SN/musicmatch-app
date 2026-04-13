@@ -3,15 +3,15 @@ package com.musicmatch.backend.service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.musicmatch.backend.dto.InstrumentLevelRequest;
+import com.musicmatch.backend.dto.MusicalOptionDTO;
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
-import com.musicmatch.backend.dto.UpdateMusicalProfileRequest;
-import com.musicmatch.backend.dto.UpdateProfileInfoRequest;
+import com.musicmatch.backend.dto.UpdateProfileRequest;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.model.Instrument;
 import com.musicmatch.backend.model.Profile;
@@ -23,6 +23,12 @@ import com.musicmatch.backend.repository.ProfileInstrumentRepository;
 import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.StyleRepository;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,63 +42,142 @@ public class ProfileService {
     private final CityRepository cityRepository;
 
     @Transactional
-    public void updateProfileInfo(Long userId, UpdateProfileInfoRequest request) {
+    public void updateProfilePartial(Long userId, UpdateProfileRequest request) {
 
         Profile profile = profileRepository.findById(userId)
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
 
-        profile.setBiography(request.getBiography());
-        profile.setProfilePicture(request.getProfilePicture());
+        // BIO
+        if (request.getBiography() != null) {
+            profile.setBiography(request.getBiography());
+        }
 
-        if(request.getCityId() != null) {
+        // CITY
+        if (request.getCityId() != null) {
             City city = cityRepository.findById(request.getCityId())
-                    .orElseThrow();
+                    .orElseThrow(() -> new RuntimeException("Ciudad no encontrada"));
             profile.setCity(city);
         }
 
-        profileRepository.save(profile);
+        // EXPERIENCE
+        if (request.getExperienceLevel() != null) {
+            profile.setExperienceLevel(request.getExperienceLevel());
+        }
+
+        // STYLES
+        if (request.getStyleIds() != null) {
+
+            if (request.getStyleIds().isEmpty()) {
+                profile.setStyles(new HashSet<>());
+            } else {
+                List<Style> foundStyles = styleRepository.findAllById(request.getStyleIds());
+
+                if (foundStyles.size() != request.getStyleIds().size()) {
+                    throw new RuntimeException("Algunos estilos no existen");
+                }
+
+                profile.setStyles(new HashSet<>(foundStyles));
+            }
+        }
+
+        // INSTRUMENTS
+        if (request.getInstruments() != null) {
+
+            profileInstrumentRepository.deleteByProfileId(userId);
+
+            if (!request.getInstruments().isEmpty()) {
+
+                List<ProfileInstrument> newInstruments = new ArrayList<>();
+
+                for (InstrumentLevelRequest instrumentRequest : request.getInstruments()) {
+
+                    Instrument instrument = instrumentRepository
+                            .findById(instrumentRequest.getInstrumentId())
+                            .orElseThrow(() -> new RuntimeException("Instrumento no encontrado"));
+
+                    ProfileInstrument pi = new ProfileInstrument();
+                    pi.setProfile(profile);
+                    pi.setInstrument(instrument);
+                    pi.setLevel(instrumentRequest.getLevel());
+
+                    newInstruments.add(pi);
+                }
+
+                profileInstrumentRepository.saveAll(newInstruments);
+            }
+        }
     }
 
     public MusicalOptionsResponse getMusicalOptions() {
 
-        return new MusicalOptionsResponse(
-            instrumentRepository.findAll(),
-            styleRepository.findAll()
-        );
+        List<MusicalOptionDTO> instruments =
+                instrumentRepository.findAll()
+                        .stream()
+                        .map(i -> new MusicalOptionDTO(i.getId(), i.getName()))
+                        .toList();
+
+        List<MusicalOptionDTO> styles =
+                styleRepository.findAll()
+                        .stream()
+                        .map(s -> new MusicalOptionDTO(s.getId(), s.getName()))
+                        .toList();
+
+        return new MusicalOptionsResponse(instruments, styles);
     }
 
-    @Transactional
-    public void updateMusicalProfile(Long userId, UpdateMusicalProfileRequest request) {
+    public String saveProfileImage(Long userId, MultipartFile file) throws IOException {
 
-        Profile profile = profileRepository.findById(userId)
-                .orElseThrow();
-
-        // actualizar nivel global
-        profile.setExperienceLevel(request.getExperienceLevel());
-
-        // actualizar estilos
-        Set<Style> styles = new HashSet<>(styleRepository.findAllById(request.getStyleIds()));
-        profile.setStyles(styles);
-
-        // eliminar instrumentos anteriores
-        profileInstrumentRepository.deleteByProfileId(userId);
-
-        List<ProfileInstrument> newInstruments = new ArrayList<>();
-
-        for (InstrumentLevelRequest instrumentRequest : request.getInstruments()) {
-
-            Instrument instrument = instrumentRepository
-                    .findById(instrumentRequest.getInstrumentId())
-                    .orElseThrow();
-
-            ProfileInstrument pi = new ProfileInstrument();
-            pi.setProfile(profile);
-            pi.setInstrument(instrument);
-            pi.setLevel(instrumentRequest.getLevel());
-
-            newInstruments.add(pi);
+        if (file.isEmpty()) {
+            throw new RuntimeException("Archivo vacío");
         }
 
-        profileInstrumentRepository.saveAll(newInstruments);
+        if (file.getSize() > 5_000_000) {
+            throw new RuntimeException("Archivo demasiado grande");
+        }
+
+        String contentType = file.getContentType();
+        String filename = file.getOriginalFilename();
+
+        boolean isJpg = "image/jpeg".equalsIgnoreCase(contentType)
+                || "image/jpg".equalsIgnoreCase(contentType);
+
+        boolean isPng = "image/png".equalsIgnoreCase(contentType);
+
+        boolean hasValidExtension =
+                filename != null &&
+                (filename.toLowerCase().endsWith(".jpg")
+                || filename.toLowerCase().endsWith(".jpeg")
+                || filename.toLowerCase().endsWith(".png"));
+
+        if (!(isJpg || isPng || hasValidExtension)) {
+            throw new RuntimeException("Solo JPG o PNG");
+        }
+
+        Profile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
+
+        String originalName = Paths.get(file.getOriginalFilename())
+                .getFileName()
+                .toString()
+                .replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+
+        String fileName = UUID.randomUUID() + "_" + originalName;
+
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "uploads");
+        Files.createDirectories(uploadPath);
+
+        if (profile.getProfilePicture() != null) {
+            Files.deleteIfExists(uploadPath.resolve(profile.getProfilePicture()));
+        }
+
+        Files.copy(file.getInputStream(),
+                uploadPath.resolve(fileName),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        profile.setProfilePicture(fileName);
+        profileRepository.save(profile);
+
+        return "/api/profile/avatar/" + fileName;
     }
+
 }

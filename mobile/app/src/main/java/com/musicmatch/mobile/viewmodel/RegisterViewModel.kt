@@ -1,7 +1,6 @@
 package com.musicmatch.mobile.viewmodel
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -16,53 +15,40 @@ import kotlinx.coroutines.launch
 class RegisterViewModel : ViewModel() {
 
     private val tokenManager = TokenManager()
+    private val repository = UserRepository(ApiService.create())
+
     var user = mutableStateOf(User())
         private set
 
-    private val repository = UserRepository(ApiService.create())
+    fun onUsernameChange(newUsername: String) = run { user.value = user.value.copy(username = newUsername) }
+    fun onEmailChange(newEmail: String) = run { user.value = user.value.copy(email = newEmail) }
+    fun onPasswordChange(newPassword: String) = run { user.value = user.value.copy(password = newPassword) }
 
-    fun onUsernameChange(newUsername: String) {
-        user.value = user.value.copy(username = newUsername)
-    }
-
-    fun onEmailChange(newEmail: String) {
-        user.value = user.value.copy(email = newEmail)
-    }
-
-    fun onPasswordChange(newPassword: String) {
-        user.value = user.value.copy(password = newPassword)
-    }
-
-    fun onRegisterClicked(context: Context, onSuccess: () -> Unit) {
+    // Cambiamos onSuccess para que acepte el ID del usuario
+    fun onRegisterClicked(context: Context, onSuccess: (Long) -> Unit) {
         val currentUser = user.value
         if (currentUser.username.isBlank() || currentUser.email.isBlank() || currentUser.password.isBlank()) {
-            Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Campos obligatorios", Toast.LENGTH_SHORT).show()
             return
         }
 
         viewModelScope.launch {
             try {
                 val response = repository.registerUser(
-                    RegisterRequest(
-                        username = currentUser.username,
-                        email = currentUser.email,
-                        password = currentUser.password
-                    )
+                    RegisterRequest(currentUser.username, currentUser.email, currentUser.password)
                 )
 
-                if(response.success && response.data != null){
-                    val token = response.data.token ?: ""
-                    tokenManager.saveToken(context, token)
+                if (response.success && response.data != null) {
+                    tokenManager.saveToken(context, response.data.token ?: "")
 
-                    Toast.makeText(context, "Registro exitoso, bienvenido ${response.data.username}", Toast.LENGTH_SHORT).show()
-                    onSuccess()
+                    // Supongamos que response.data tiene el id del usuario
+                    val userId = response.data.id ?: 0L
+                    onSuccess(userId)
                 } else {
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }
-
             } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Error al registrar usuario", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
             }
         }
     }

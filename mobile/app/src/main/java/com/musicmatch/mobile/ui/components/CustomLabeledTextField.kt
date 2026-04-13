@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.musicmatch.mobile.ui.screens.ColorTexto
+import com.musicmatch.mobile.ui.theme.ColorTexto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

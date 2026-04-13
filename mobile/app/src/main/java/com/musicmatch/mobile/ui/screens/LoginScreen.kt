@@ -17,11 +17,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.musicmatch.mobile.ui.components.CustomLabelledTextField
 import com.musicmatch.mobile.ui.components.PasswordLabelledTextField
 import com.musicmatch.mobile.viewmodel.LoginViewModel
+import com.musicmatch.mobile.ui.theme.ColorFondo
+import com.musicmatch.mobile.ui.theme.ColorPrincipal
+import com.musicmatch.mobile.ui.theme.ColorSecundario
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onNavigateRegister: () -> Unit = {}
 ) {
     val email = viewModel.email.value
     val password = viewModel.password.value
@@ -97,7 +101,7 @@ fun LoginScreen(
                         Text("Entrar", fontSize = 16.sp, color = Color.White)
                     }
 
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(onClick = onNavigateRegister) {
                         Text(
                             "¿No tienes cuenta? Regístrate",
                             color = ColorPrincipal,

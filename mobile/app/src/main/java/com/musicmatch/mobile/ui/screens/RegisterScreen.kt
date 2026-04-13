@@ -17,17 +17,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.musicmatch.mobile.ui.components.CustomLabelledTextField
 import com.musicmatch.mobile.ui.components.PasswordLabelledTextField
 import com.musicmatch.mobile.viewmodel.RegisterViewModel
-
-// --- Paleta de Colores ---
-val ColorPrincipal = Color(0xFF2C3E50)
-val ColorSecundario = Color(0xFF8E44AD)
-val ColorFondo = Color(0xFFF5F5F5)
-val ColorTexto = Color(0xFF333333)
-
+import com.musicmatch.mobile.ui.theme.ColorFondo
+import com.musicmatch.mobile.ui.theme.ColorPrincipal
+import com.musicmatch.mobile.ui.theme.ColorSecundario
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel = viewModel(),
-    onNavigateLogin: () -> Unit = {}
+    viewModel: RegisterViewModel, // Cambiado para recibir el del NavGraph
+    onNavigateLogin: () -> Unit = {},
+    onNavigateToMusicalProfile: (Long) -> Unit // Añadido para solucionar el error
 ) {
     val context = LocalContext.current
     val user = viewModel.user.value
@@ -91,14 +88,19 @@ fun RegisterScreen(
                 // --- SEPARACIÓN ---
                 Spacer(modifier = Modifier.height(80.dp))
 
-                // --- SECCIÓN DE BOTONES (Vertical para evitar errores de texto) ---
+                // --- SECCIÓN DE BOTONES ---
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Button(
-                        onClick = { viewModel.onRegisterClicked(context) {} },
+                        onClick = {
+                            // Aquí se activa la navegación hacia el perfil al éxito
+                            viewModel.onRegisterClicked(context) { userId ->
+                                onNavigateToMusicalProfile(userId)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
