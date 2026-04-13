@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,8 +25,10 @@ import com.musicmatch.mobile.ui.theme.ColorSecundario
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
-    onNavigateRegister: () -> Unit = {}
+    onNavigateRegister: () -> Unit = {},
+    onLoginSuccess: (Long) -> Unit = {}   // 👈 IMPORTANTE
 ) {
+
     val email = viewModel.email.value
     val password = viewModel.password.value
     val context = LocalContext.current
@@ -34,9 +36,10 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ColorFondo) // Usando la constante de Registro
+            .background(ColorFondo)
     ) {
-        // --- Cabecera (Igual que Registro) ---
+
+        // ================= HEADER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,21 +56,24 @@ fun LoginScreen(
             )
         }
 
-        // --- Cuerpo Centrado ---
+        // ================= BODY =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
             contentAlignment = Alignment.Center
         ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Sección de Campos
+
+                // ================= CAMPOS =================
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+
                     CustomLabelledTextField(
                         label = "Correo",
                         value = email,
@@ -81,29 +87,39 @@ fun LoginScreen(
                     )
                 }
 
-                // --- SEPARACIÓN MÁXIMA (100.dp como en Registro) ---
                 Spacer(modifier = Modifier.height(100.dp))
 
-                // Sección de Botones
+                // ================= BOTONES =================
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
                     Button(
-                        onClick = { viewModel.onLoginClicked(context) {} },
+                        onClick = {
+                            viewModel.onLoginClicked(context) { userId ->
+                                onLoginSuccess(userId)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorSecundario),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ColorSecundario
+                        ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Entrar", fontSize = 16.sp, color = Color.White)
+                        Text(
+                            text = "Entrar",
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
                     }
 
                     TextButton(onClick = onNavigateRegister) {
                         Text(
-                            "¿No tienes cuenta? Regístrate",
+                            text = "¿No tienes cuenta? Regístrate",
                             color = ColorPrincipal,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -112,7 +128,7 @@ fun LoginScreen(
             }
         }
 
-        // --- Pie de página ---
+        // ================= FOOTER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()

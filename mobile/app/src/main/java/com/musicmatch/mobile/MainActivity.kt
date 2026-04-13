@@ -17,35 +17,38 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MaterialTheme {
+
                 val navController = rememberNavController()
 
                 LaunchedEffect(Unit) {
-                    // Validamos el token y obtenemos el usuario
+
                     loginViewModel.validateToken(
                         context = this@MainActivity,
                         onValid = { username ->
-                            // Token válido y usuario existe → Login con mensaje
+
                             Toast.makeText(
                                 this@MainActivity,
                                 "Bienvenido $username",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            navController.navigate(Screen.Login.route) {
+
+                            // ✅ IR A HOME (NO LOGIN)
+                            navController.navigate(Screen.Home.route) {
                                 popUpTo(0)
                             }
                         },
                         onInvalid = {
-                            // No hay token o usuario no existe → Registro
-                            navController.navigate(Screen.Register.route) {
+
+                            navController.navigate(Screen.Login.route) {
                                 popUpTo(0)
                             }
                         }
                     )
                 }
 
-                // Carga normal del NavGraph
                 NavGraph(navController = navController)
             }
         }

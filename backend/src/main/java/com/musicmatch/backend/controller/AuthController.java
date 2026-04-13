@@ -85,7 +85,8 @@ public class AuthController {
                         ))
                         .toList(),
 
-                profile.getProfilePicture()
+                profile.getProfilePicture(),
+                user.getEmail()
         );
 
         return new ApiResponse<>(true, "Usuario encontrado", response);

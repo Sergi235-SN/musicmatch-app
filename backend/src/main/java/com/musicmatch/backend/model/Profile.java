@@ -44,4 +44,9 @@ public class Profile {
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL)
     private List<ProfileInstrument> profileInstruments;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile_step")
+    private ProfileStep profileStep;
+
 }

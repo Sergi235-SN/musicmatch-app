@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicalProfileStep2Screen(
-    userId: Long,
     onFinish: () -> Unit
 ) {
     val context = LocalContext.current
@@ -211,7 +210,7 @@ fun MusicalProfileStep2Screen(
                 // ================= BUTTON =================
                 Button(
                     onClick = {
-                        viewModel.saveStep2(context, userId, onFinish)
+                        viewModel.saveStep2(context, onFinish)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

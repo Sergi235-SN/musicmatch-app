@@ -9,6 +9,7 @@ import com.musicmatch.mobile.model.dto.RegisterRequest
 import com.musicmatch.mobile.model.dto.UpdateProfileRequest
 import com.musicmatch.mobile.model.dto.UserProfileResponse
 import com.musicmatch.mobile.model.dto.UserResponse
+import com.musicmatch.mobile.utils.NetworkConfig
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -56,7 +57,7 @@ interface ApiService {
     companion object {
         fun create(): ApiService {
             val retrofit = Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080/")
+                .baseUrl(NetworkConfig.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 

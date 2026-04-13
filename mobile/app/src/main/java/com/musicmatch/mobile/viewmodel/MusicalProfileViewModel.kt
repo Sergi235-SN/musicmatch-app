@@ -10,6 +10,7 @@ import com.musicmatch.mobile.data.repository.UserRepository
 import com.musicmatch.mobile.model.City
 import com.musicmatch.mobile.model.ExperienceLevel
 import com.musicmatch.mobile.model.dto.*
+import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
@@ -22,17 +23,19 @@ class MusicalProfileViewModel(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
+    // ===================== STATE =====================
+
     val selectedInstruments =
         mutableStateListOf<Pair<MusicalOptionDTO, ExperienceLevel>>()
 
     val selectedStyles = mutableStateListOf<MusicalOptionDTO>()
+
     var globalExperience by mutableStateOf(ExperienceLevel.PRINCIPIANTE)
 
     var biography by mutableStateOf("")
     var selectedCityId by mutableStateOf<Long?>(null)
 
     var imageUri by mutableStateOf<Uri?>(null)
-
     var currentAvatarUrl by mutableStateOf<String?>(null)
 
     var availableCities by mutableStateOf<List<City>>(emptyList())
@@ -41,8 +44,24 @@ class MusicalProfileViewModel(
 
     var isLoading by mutableStateOf(false)
 
+    var username by mutableStateOf<String?>(null)
+    var email by mutableStateOf<String?>(null)
+
+    // ===================== TOKEN HELPERS =====================
+
+    private fun getToken(context: Context): String? {
+        return tokenManager.getToken(context)
+    }
+
+    private fun getUserId(context: Context): Long {
+        return tokenManager.getUserIdFromToken(context)
+            ?: throw IllegalStateException("Token inválido o sin userId")
+    }
+
+    // ===================== LOAD DATA =====================
+
     fun loadData(context: Context) {
-        val token = tokenManager.getToken(context) ?: return
+        val token = getToken(context) ?: return
 
         viewModelScope.launch {
             val options = repository.getMusicalOptions(token)
@@ -53,100 +72,162 @@ class MusicalProfileViewModel(
             availableStyles = options.styles
             availableCities = cities
 
-            val data = profile.data
+            val data = profile.data ?: return@launch
 
-            if (data != null) {
+            username = data.username
+            email = data.email
+            biography = data.biography ?: ""
+            selectedCityId = data.cityId
+            globalExperience = data.experienceLevel ?: ExperienceLevel.PRINCIPIANTE
 
-                biography = data.biography ?: ""
-
-                selectedCityId = data.cityId
-
-                globalExperience = data.experienceLevel ?: ExperienceLevel.PRINCIPIANTE
-
-                selectedStyles.clear()
-                data.styleIds?.forEach { id ->
-                    availableStyles.find { it.id == id }?.let {
-                        selectedStyles.add(it)
-                    }
+            // styles
+            selectedStyles.clear()
+            data.styleIds?.forEach { id ->
+                availableStyles.find { it.id == id }?.let {
+                    selectedStyles.add(it)
                 }
+            }
 
-                selectedInstruments.clear()
-                data.instruments?.forEach { inst ->
-                    availableInstruments.find { it.id == inst.instrumentId }?.let { option ->
-                        selectedInstruments.add(
-                            option to (inst.level ?: ExperienceLevel.PRINCIPIANTE)
-                        )
-                    }
+            // instruments
+            selectedInstruments.clear()
+            data.instruments?.forEach { inst ->
+                availableInstruments.find { it.id == inst.instrumentId }?.let { option ->
+                    selectedInstruments.add(
+                        option to (inst.level ?: ExperienceLevel.PRINCIPIANTE)
+                    )
                 }
+            }
 
-                currentAvatarUrl = data.profilePicture?.let {
-                    "http://10.0.2.2:8080/api/profile/avatar/$it"
-                }
+            // avatar
+            currentAvatarUrl = data.profilePicture?.let {
+                NetworkConfig.getAvatarUrl(it)
             }
         }
     }
 
+    // ===================== STEP 1 =====================
 
-    fun saveStep1(context: Context, userId: Long, onNext: () -> Unit) {
-        val token = tokenManager.getToken(context) ?: return
-
-        viewModelScope.launch {
-            isLoading = true
-
-            val request = UpdateProfileRequest(
-                experienceLevel = globalExperience,
-                styleIds = selectedStyles.map { it.id },
-                instruments = selectedInstruments.map {
-                    InstrumentLevelRequest(it.first.id, it.second)
-                }
-            )
-
-            repository.updateProfile(token, userId, request)
-
-            isLoading = false
-            onNext()
-        }
-    }
-
-    fun saveStep2(context: Context, userId: Long, onFinish: () -> Unit) {
-        val token = tokenManager.getToken(context) ?: return
+    fun saveStep1(context: Context, onNext: () -> Unit) {
+        val token = getToken(context) ?: return
+        val userId = getUserId(context)
 
         viewModelScope.launch {
             isLoading = true
 
-            // ================= UPLOAD AVATAR =================
-            imageUri?.let { uri ->
-                val file = uriToFile(context, uri)
-
-                val requestFile = file
-                    .asRequestBody("image/*".toMediaTypeOrNull())
-
-                val body = MultipartBody.Part.createFormData(
-                    "file",
-                    file.name,
-                    requestFile
+            try {
+                val request = UpdateProfileRequest(
+                    experienceLevel = globalExperience,
+                    styleIds = selectedStyles.map { it.id },
+                    instruments = selectedInstruments.map {
+                        InstrumentLevelRequest(it.first.id, it.second)
+                    }
                 )
 
-                val filename = repository.uploadAvatar(token, userId, body)
+                repository.updateProfile(token, userId, request)
+                onNext()
 
-                if (!filename.isNullOrEmpty()) {
-                    currentAvatarUrl =
-                        "http://10.0.2.2:8080/api/profile/avatar/$filename"
-                }
+            } finally {
+                isLoading = false
             }
-
-            // ================= UPDATE PROFILE =================
-            val request = UpdateProfileRequest(
-                biography = biography,
-                cityId = selectedCityId
-            )
-
-            repository.updateProfile(token, userId, request)
-
-            isLoading = false
-            onFinish()
         }
     }
+
+    // ===================== STEP 2 =====================
+
+    fun saveStep2(context: Context, onFinish: () -> Unit) {
+        val token = getToken(context) ?: return
+        val userId = getUserId(context)
+
+        viewModelScope.launch {
+            isLoading = true
+
+            try {
+
+                // avatar
+                imageUri?.let { uri ->
+                    val file = uriToFile(context, uri)
+
+                    val body = MultipartBody.Part.createFormData(
+                        "file",
+                        file.name,
+                        file.asRequestBody("image/*".toMediaTypeOrNull())
+                    )
+
+                    val filename = repository.uploadAvatar(token, userId, body)
+
+                    if (!filename.isNullOrEmpty()) {
+                        currentAvatarUrl = NetworkConfig.getAvatarUrl(filename)
+                    }
+                }
+
+                // profile update
+                val request = UpdateProfileRequest(
+                    biography = biography,
+                    cityId = selectedCityId
+                )
+
+                repository.updateProfile(token, userId, request)
+
+                onFinish()
+
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // ===================== FULL PROFILE =====================
+
+    fun saveFullProfile(context: Context, onFinish: () -> Unit) {
+        val token = getToken(context) ?: return
+        val userId = getUserId(context)
+
+        viewModelScope.launch {
+            isLoading = true
+
+            try {
+
+                var uploadedFilename: String? = null
+
+                // avatar
+                imageUri?.let { uri ->
+                    val file = uriToFile(context, uri)
+
+                    val body = MultipartBody.Part.createFormData(
+                        "file",
+                        file.name,
+                        file.asRequestBody("image/*".toMediaTypeOrNull())
+                    )
+
+                    uploadedFilename = repository.uploadAvatar(token, userId, body)
+                }
+
+                // full update
+                val request = UpdateProfileRequest(
+                    biography = biography,
+                    cityId = selectedCityId,
+                    experienceLevel = globalExperience,
+                    styleIds = selectedStyles.map { it.id },
+                    instruments = selectedInstruments.map {
+                        InstrumentLevelRequest(it.first.id, it.second)
+                    }
+                )
+
+                repository.updateProfile(token, userId, request)
+
+                uploadedFilename?.let {
+                    currentAvatarUrl = NetworkConfig.getAvatarUrl(it)
+                }
+
+                onFinish()
+
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // ===================== UTILS =====================
 
     private fun uriToFile(context: Context, uri: Uri): File {
         val inputStream = context.contentResolver.openInputStream(uri)!!
@@ -154,6 +235,8 @@ class MusicalProfileViewModel(
         file.outputStream().use { inputStream.copyTo(it) }
         return file
     }
+
+    // ===================== FACTORY =====================
 
     class Factory(
         private val repository: UserRepository,

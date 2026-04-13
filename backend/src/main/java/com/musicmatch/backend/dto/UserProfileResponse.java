@@ -27,4 +27,6 @@ public class UserProfileResponse {
     private List<InstrumentLevelResponse> instruments;
 
     private String profilePicture;
+
+    private String email;
 }

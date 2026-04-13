@@ -21,4 +21,21 @@ class TokenManager {
         val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
         prefs.edit { remove("jwt_token") }
     }
+
+    fun getUserIdFromToken(context: Context): Long? {
+        val token = getToken(context) ?: return null
+        val parts = token.split(".")
+        if (parts.size < 2) return null
+
+        return try {
+            val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+            val json = org.json.JSONObject(payload)
+
+            val userIdString = json.optString("sub", null)
+            userIdString.toLongOrNull()
+        } catch (e: Exception) {
+            android.util.Log.e("TokenManager", "Error decodificando token", e)
+            null
+        }
+    }
 }

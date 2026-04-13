@@ -35,7 +35,6 @@ import com.musicmatch.mobile.ui.theme.ColorTexto
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MusicalProfileScreen(
-    userId: Long,
     onNavigateNext: () -> Unit
 ) {
 
@@ -182,7 +181,7 @@ fun MusicalProfileScreen(
 
                 Button(
                     onClick = {
-                        viewModel.saveStep1(context, userId, onNavigateNext)
+                        viewModel.saveStep1(context, onNavigateNext)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

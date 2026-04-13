@@ -11,5 +11,6 @@ data class UserProfileResponse(
     val profilePicture: String?,
     val experienceLevel: ExperienceLevel?,
     val styleIds: List<Long>?,
-    val instruments: List<InstrumentLevelResponse>?
+    val instruments: List<InstrumentLevelResponse>?,
+    val email: String
 )
