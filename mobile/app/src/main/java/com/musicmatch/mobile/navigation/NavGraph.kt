@@ -39,6 +39,10 @@ sealed class Screen(val route: String) {
     object MusicalProfileStep2 : Screen("musical_profile_step2/{userId}") {
         fun createRoute(userId: Long) = "musical_profile_step2/$userId"
     }
+
+    object PublicProfile : Screen("public_profile/{userId}") {
+        fun createRoute(userId: Long) = "public_profile/$userId"
+    }
 }
 
 // ================= BOTTOM NAV =================
@@ -114,10 +118,10 @@ fun NavGraph(navController: NavHostController) {
 
         // ================= MATCHES =================
         composable(Screen.Matches.route) {
+
             MainScaffold(navController) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("MATCHES")
-                }
+
+                MatchesScreen(navController = navController)
             }
         }
 
@@ -168,8 +172,23 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(
+            route = Screen.PublicProfile.route,
+            arguments = listOf(navArgument("userId") { type = NavType.LongType })
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+
+            PublicProfileScreen(
+                userId = userId,
+                navController = navController
+            )
+        }
+
     }
 }
+
 
 // ================= MAIN SCAFFOLD =================
 @Composable

@@ -19,6 +19,7 @@ import com.musicmatch.mobile.ui.theme.ColorSecundario
 @Composable
 fun SmartChip(
     text: String,
+    modifier: Modifier = Modifier,
     level: ExperienceLevel? = null,
     isEditIcon: Boolean = false,
     onRemove: (() -> Unit)? = null,
@@ -27,13 +28,10 @@ fun SmartChip(
 
     val containerColor = when {
         isEditIcon -> ColorSecundario.copy(alpha = 0.15f)
-
         level == null -> Color(0xFFE0E0E0)
-
-        level == ExperienceLevel.PRINCIPIANTE -> Color(0xFFF1F8E9) // verde suave
-        level == ExperienceLevel.INTERMEDIO -> Color(0xFFFFF9C4) // amarillo suave
-        level == ExperienceLevel.AVANZADO -> Color(0xFFFFEBEE) // rojo suave
-
+        level == ExperienceLevel.PRINCIPIANTE -> Color(0xFFF1F8E9)
+        level == ExperienceLevel.INTERMEDIO -> Color(0xFFFFF9C4)
+        level == ExperienceLevel.AVANZADO -> Color(0xFFFFEBEE)
         else -> Color(0xFFE0E0E0)
     }
 
@@ -42,20 +40,18 @@ fun SmartChip(
         else ColorPrincipal
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .padding(4.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }, // Se ejecuta la lambda onClick
         shape = RoundedCornerShape(20.dp),
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = 1.dp
     ) {
-
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
@@ -63,9 +59,7 @@ fun SmartChip(
             )
 
             if (onRemove != null) {
-
                 Spacer(Modifier.width(6.dp))
-
                 Icon(
                     Icons.Default.Close,
                     contentDescription = "Eliminar",

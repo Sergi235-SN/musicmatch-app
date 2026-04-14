@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
+import com.musicmatch.backend.dto.UserProfileResponse;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.repository.CityRepository;
 import com.musicmatch.backend.service.ProfileService;
@@ -88,6 +89,11 @@ public class ProfileController {
                 .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .header(HttpHeaders.CACHE_CONTROL, "max-age=31536000")
                 .body(resource);
+    }
+
+    @GetMapping("/public/{userId}")
+    public UserProfileResponse getPublicProfile(@PathVariable Long userId) {
+        return profileService.getPublicProfile(userId);
     }
 
 }

@@ -2,10 +2,14 @@ package com.musicmatch.mobile.data
 
 import com.musicmatch.mobile.model.City
 import com.musicmatch.mobile.model.dto.ApiResponse
+import com.musicmatch.mobile.model.dto.BlockRequest
 import com.musicmatch.mobile.model.dto.LoginRequest
 import com.musicmatch.mobile.model.dto.LoginResponse
+import com.musicmatch.mobile.model.dto.MatchCandidatesResponse
 import com.musicmatch.mobile.model.dto.MusicalOptionsResponse
 import com.musicmatch.mobile.model.dto.RegisterRequest
+import com.musicmatch.mobile.model.dto.SwipeRequest
+import com.musicmatch.mobile.model.dto.SwipeResponse
 import com.musicmatch.mobile.model.dto.UpdateProfileRequest
 import com.musicmatch.mobile.model.dto.UserProfileResponse
 import com.musicmatch.mobile.model.dto.UserResponse
@@ -53,6 +57,29 @@ interface ApiService {
         @Path("userId") userId: Long,
         @Part file: MultipartBody.Part
     ): String
+
+    @GET("api/matches/{userId}/candidates")
+    suspend fun getCandidates(
+        @Path("userId") userId: Long,
+        @Header("Authorization") token: String
+    ): MatchCandidatesResponse
+
+    @POST("api/matches/swipe")
+    suspend fun swipe(
+        @Header("Authorization") token: String,
+        @Body request: SwipeRequest
+    ): SwipeResponse
+
+    @POST("api/matches/block")
+    suspend fun block(
+        @Header("Authorization") token: String,
+        @Body request: BlockRequest
+    )
+
+    @GET("api/profile/public/{userId}")
+    suspend fun getPublicProfile(
+        @Path("userId") userId: Long
+    ): UserProfileResponse
 
     companion object {
         fun create(): ApiService {

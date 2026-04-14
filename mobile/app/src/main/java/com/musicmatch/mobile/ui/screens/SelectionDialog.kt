@@ -106,7 +106,11 @@ fun SelectionDialog(
 
                         if (isInstrumentMode) {
                             currentInstrumentsWithLevel.forEach { (name, level) ->
-                                SmartChip(name, level, onRemove = { onRemove(name) })
+                                SmartChip(
+                                    text = name,
+                                    level = level,
+                                    onRemove = { onRemove(name) }
+                                )
                             }
                         } else {
                             currentSelectedNames.forEach { name ->

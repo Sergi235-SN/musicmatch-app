@@ -49,4 +49,8 @@ class UserRepository(private val api: ApiService) {
         }
     }
 
+    suspend fun getPublicProfile(userId: Long): UserProfileResponse {
+        return api.getPublicProfile(userId)
+    }
+
 }

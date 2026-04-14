@@ -9,14 +9,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.musicmatch.backend.dto.InstrumentLevelRequest;
+import com.musicmatch.backend.dto.InstrumentLevelResponse;
 import com.musicmatch.backend.dto.MusicalOptionDTO;
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
+import com.musicmatch.backend.dto.UserProfileResponse;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.model.Instrument;
 import com.musicmatch.backend.model.Profile;
 import com.musicmatch.backend.model.ProfileInstrument;
 import com.musicmatch.backend.model.Style;
+import com.musicmatch.backend.model.User;
 import com.musicmatch.backend.repository.CityRepository;
 import com.musicmatch.backend.repository.InstrumentRepository;
 import com.musicmatch.backend.repository.ProfileInstrumentRepository;
@@ -178,6 +181,43 @@ public class ProfileService {
         profileRepository.save(profile);
 
         return "/api/profile/avatar/" + fileName;
+    }
+    
+    public UserProfileResponse getPublicProfile(Long userId) {
+
+        Profile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
+
+        User user = profile.getUser();
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+
+                profile.getBiography(),
+
+                profile.getCity() != null ? profile.getCity().getId() : null,
+                profile.getCity() != null ? profile.getCity().getName() : null,
+
+                profile.getExperienceLevel(),
+
+                profile.getStyles()
+                        .stream()
+                        .map(Style::getId)
+                        .toList(),
+
+                profile.getProfileInstruments()
+                        .stream()
+                        .map(pi -> new InstrumentLevelResponse(
+                                pi.getInstrument().getId(),
+                                pi.getLevel()
+                        ))
+                        .toList(),
+
+                profile.getProfilePicture(),
+
+                user.getEmail()
+        );
     }
 
 }
