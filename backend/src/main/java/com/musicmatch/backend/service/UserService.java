@@ -10,7 +10,6 @@ import com.musicmatch.backend.dto.LoginResponse;
 import com.musicmatch.backend.dto.RegisterRequest;
 import com.musicmatch.backend.dto.UserResponse;
 import com.musicmatch.backend.model.Profile;
-import com.musicmatch.backend.model.ProfileStep;
 import com.musicmatch.backend.model.User;
 import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.UserRepository;
@@ -46,7 +45,6 @@ public class UserService {
         Profile profile = new Profile();
 
         profile.setUser(saved);
-        profile.setProfileStep(ProfileStep.STEP_1);
 
         profileRepository.save(profile);
 
