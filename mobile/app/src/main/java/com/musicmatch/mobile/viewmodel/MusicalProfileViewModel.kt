@@ -23,7 +23,6 @@ class MusicalProfileViewModel(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-    // ===================== STATE =====================
 
     val selectedInstruments =
         mutableStateListOf<Pair<MusicalOptionDTO, ExperienceLevel>>()
@@ -47,7 +46,6 @@ class MusicalProfileViewModel(
     var username by mutableStateOf<String?>(null)
     var email by mutableStateOf<String?>(null)
 
-    // ===================== TOKEN HELPERS =====================
 
     private fun getToken(context: Context): String? {
         return tokenManager.getToken(context)
@@ -58,7 +56,6 @@ class MusicalProfileViewModel(
             ?: throw IllegalStateException("Token inválido o sin userId")
     }
 
-    // ===================== LOAD DATA =====================
 
     fun loadData(context: Context) {
         val token = getToken(context) ?: return
@@ -80,7 +77,6 @@ class MusicalProfileViewModel(
             selectedCityId = data.cityId
             globalExperience = data.experienceLevel ?: ExperienceLevel.PRINCIPIANTE
 
-            // styles
             selectedStyles.clear()
             data.styleIds?.forEach { id ->
                 availableStyles.find { it.id == id }?.let {
@@ -88,7 +84,6 @@ class MusicalProfileViewModel(
                 }
             }
 
-            // instruments
             selectedInstruments.clear()
             data.instruments?.forEach { inst ->
                 availableInstruments.find { it.id == inst.instrumentId }?.let { option ->
@@ -98,14 +93,12 @@ class MusicalProfileViewModel(
                 }
             }
 
-            // avatar
             currentAvatarUrl = data.profilePicture?.let {
                 NetworkConfig.getAvatarUrl(it)
             }
         }
     }
 
-    // ===================== STEP 1 =====================
 
     fun saveStep1(context: Context, onNext: () -> Unit) {
         val token = getToken(context) ?: return
@@ -132,7 +125,6 @@ class MusicalProfileViewModel(
         }
     }
 
-    // ===================== STEP 2 =====================
 
     fun saveStep2(context: Context, onFinish: () -> Unit) {
         val token = getToken(context) ?: return
@@ -143,7 +135,6 @@ class MusicalProfileViewModel(
 
             try {
 
-                // avatar
                 imageUri?.let { uri ->
                     val file = uriToFile(context, uri)
 
@@ -160,7 +151,6 @@ class MusicalProfileViewModel(
                     }
                 }
 
-                // profile update
                 val request = UpdateProfileRequest(
                     biography = biography,
                     cityId = selectedCityId
@@ -176,7 +166,6 @@ class MusicalProfileViewModel(
         }
     }
 
-    // ===================== FULL PROFILE =====================
 
     fun saveFullProfile(context: Context, onFinish: () -> Unit) {
         val token = getToken(context) ?: return
@@ -189,7 +178,6 @@ class MusicalProfileViewModel(
 
                 var uploadedFilename: String? = null
 
-                // avatar
                 imageUri?.let { uri ->
                     val file = uriToFile(context, uri)
 
@@ -202,7 +190,6 @@ class MusicalProfileViewModel(
                     uploadedFilename = repository.uploadAvatar(token, userId, body)
                 }
 
-                // full update
                 val request = UpdateProfileRequest(
                     biography = biography,
                     cityId = selectedCityId,
@@ -227,7 +214,6 @@ class MusicalProfileViewModel(
         }
     }
 
-    // ===================== UTILS =====================
 
     private fun uriToFile(context: Context, uri: Uri): File {
         val inputStream = context.contentResolver.openInputStream(uri)!!
@@ -236,7 +222,6 @@ class MusicalProfileViewModel(
         return file
     }
 
-    // ===================== FACTORY =====================
 
     class Factory(
         private val repository: UserRepository,

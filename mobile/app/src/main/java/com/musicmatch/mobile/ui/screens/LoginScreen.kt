@@ -26,7 +26,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onNavigateRegister: () -> Unit = {},
-    onLoginSuccess: (Long) -> Unit = {}   // 👈 IMPORTANTE
+    onLoginSuccess: (Long) -> Unit = {} 
 ) {
 
     val email = viewModel.email.value
@@ -39,7 +39,6 @@ fun LoginScreen(
             .background(ColorFondo)
     ) {
 
-        // ================= HEADER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -56,7 +55,6 @@ fun LoginScreen(
             )
         }
 
-        // ================= BODY =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,7 +69,6 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // ================= CAMPOS =================
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
 
                     CustomLabelledTextField(
@@ -89,7 +86,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(100.dp))
 
-                // ================= BOTONES =================
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -128,7 +124,6 @@ fun LoginScreen(
             }
         }
 
-        // ================= FOOTER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()

@@ -80,7 +80,6 @@ fun SelectionDialog(
 
             Column(modifier = Modifier.fillMaxHeight(0.9f)) {
 
-                // ---------------- SELECTED (CON SCROLL) ----------------
                 Text(
                     "Seleccionados",
                     fontWeight = FontWeight.SemiBold,
@@ -124,7 +123,6 @@ fun SelectionDialog(
 
                 Spacer(Modifier.height(10.dp))
 
-                // ---------------- SEARCH ----------------
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -142,7 +140,6 @@ fun SelectionDialog(
 
                 Spacer(Modifier.height(10.dp))
 
-                // ---------------- LIST ----------------
                 LazyColumn(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -176,7 +173,6 @@ fun SelectionDialog(
                     }
                 }
 
-                // ---------------- LEVEL SELECTOR ----------------
                 if (isInstrumentMode && tempSelectedByClick != null) {
 
                     Spacer(Modifier.height(10.dp))

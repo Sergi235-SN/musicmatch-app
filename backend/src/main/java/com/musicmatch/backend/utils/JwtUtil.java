@@ -27,7 +27,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Extraer claims
     public Claims extractClaims(String token) throws ExpiredJwtException {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())

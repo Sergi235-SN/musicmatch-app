@@ -78,7 +78,6 @@ fun ProfileScreen(
         viewModel.loadData(context)
     }
 
-    // ===================== DIALOGS =====================
     if (showInstrumentDialog) {
         SelectionDialog(
             title = "Editar instrumentos",
@@ -151,7 +150,6 @@ fun ProfileScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Botón Editar
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = { editing = !editing }) {
                     Icon(
@@ -162,7 +160,6 @@ fun ProfileScreen(
                 }
             }
 
-            // Header (Avatar + Info)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -185,7 +182,6 @@ fun ProfileScreen(
                 }
             }
 
-            // Biografía
             OutlinedTextField(
                 value = viewModel.biography,
                 onValueChange = { if (editing) viewModel.biography = it },
@@ -195,7 +191,6 @@ fun ProfileScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // Ciudad
             var expandedCity by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expandedCity && editing,
@@ -218,7 +213,6 @@ fun ProfileScreen(
                 }
             }
 
-            // Experiencia
             var expandedExp by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expandedExp && editing,
@@ -241,7 +235,6 @@ fun ProfileScreen(
                 }
             }
 
-            // INSTRUMENTOS (Siempre colapsado a 6)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Instrumentos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(Modifier.weight(1f))
@@ -260,7 +253,6 @@ fun ProfileScreen(
                 }
             }
 
-            // ESTILOS (Siempre colapsado a 6)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Estilos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(Modifier.weight(1f))

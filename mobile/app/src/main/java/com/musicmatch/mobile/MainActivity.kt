@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            // ✅ IR A HOME (NO LOGIN)
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(0)
                             }

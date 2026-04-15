@@ -22,9 +22,9 @@ import com.musicmatch.mobile.ui.theme.ColorPrincipal
 import com.musicmatch.mobile.ui.theme.ColorSecundario
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel, // Cambiado para recibir el del NavGraph
+    viewModel: RegisterViewModel, 
     onNavigateLogin: () -> Unit = {},
-    onNavigateToMusicalProfile: (Long) -> Unit // Añadido para solucionar el error
+    onNavigateToMusicalProfile: (Long) -> Unit 
 ) {
     val context = LocalContext.current
     val user = viewModel.user.value
@@ -34,7 +34,6 @@ fun RegisterScreen(
             .fillMaxSize()
             .background(ColorFondo)
     ) {
-        // --- Cabecera ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -51,7 +50,6 @@ fun RegisterScreen(
             )
         }
 
-        // --- Cuerpo del Formulario Centrado ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,7 +62,6 @@ fun RegisterScreen(
                     .padding(horizontal = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Sección de Campos de Texto
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     CustomLabelledTextField(
                         label = "Email",
@@ -85,10 +82,7 @@ fun RegisterScreen(
                     )
                 }
 
-                // --- SEPARACIÓN ---
                 Spacer(modifier = Modifier.height(80.dp))
-
-                // --- SECCIÓN DE BOTONES ---
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -96,7 +90,6 @@ fun RegisterScreen(
                 ) {
                     Button(
                         onClick = {
-                            // Aquí se activa la navegación hacia el perfil al éxito
                             viewModel.onRegisterClicked(context) { userId ->
                                 onNavigateToMusicalProfile(userId)
                             }
@@ -125,7 +118,6 @@ fun RegisterScreen(
             }
         }
 
-        // --- Pie de página ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
