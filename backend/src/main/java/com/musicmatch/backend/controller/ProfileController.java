@@ -64,7 +64,6 @@ public class ProfileController {
 
         Path filePath = uploadPath.resolve(filename).normalize();
 
-        // Seguridad: evitar path traversal
         if (!filePath.startsWith(uploadPath)) {
             return ResponseEntity.badRequest().build();
         }

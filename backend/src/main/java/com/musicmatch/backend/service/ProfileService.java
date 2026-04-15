@@ -47,24 +47,20 @@ public class ProfileService {
         Profile profile = profileRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
 
-        // BIO
         if (request.getBiography() != null) {
             profile.setBiography(request.getBiography());
         }
 
-        // CITY
         if (request.getCityId() != null) {
             City city = cityRepository.findById(request.getCityId())
                     .orElseThrow(() -> new RuntimeException("Ciudad no encontrada"));
             profile.setCity(city);
         }
 
-        // EXPERIENCE
         if (request.getExperienceLevel() != null) {
             profile.setExperienceLevel(request.getExperienceLevel());
         }
 
-        // STYLES
         if (request.getStyleIds() != null) {
 
             if (request.getStyleIds().isEmpty()) {
@@ -80,7 +76,6 @@ public class ProfileService {
             }
         }
 
-        // INSTRUMENTS
         if (request.getInstruments() != null) {
 
             profileInstrumentRepository.deleteByProfileId(userId);

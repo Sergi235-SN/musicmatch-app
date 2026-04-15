@@ -56,7 +56,6 @@ fun MusicalProfileScreen(
         viewModel.loadData(context)
     }
 
-    // ===================== DIALOGS =====================
     if (showInstrumentDialog) {
         SelectionDialog(
             title = "Editar Instrumentos",
@@ -105,7 +104,6 @@ fun MusicalProfileScreen(
             .background(ColorFondo)
     ) {
 
-        // ================= HEADER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -122,7 +120,6 @@ fun MusicalProfileScreen(
             )
         }
 
-        // ================= BODY (CENTRADO + SCROLL) =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -134,7 +131,7 @@ fun MusicalProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp)
-                    .verticalScroll(rememberScrollState()), // 👈 SCROLL AQUI
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(26.dp)
             ) {
 
@@ -204,7 +201,6 @@ fun MusicalProfileScreen(
             }
         }
 
-        // ================= FOOTER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()

@@ -21,7 +21,6 @@ import com.musicmatch.mobile.ui.theme.ColorPrincipal
 import com.musicmatch.mobile.ui.theme.ColorSecundario
 import androidx.compose.ui.graphics.Color
 
-// ================= ROUTES =================
 sealed class Screen(val route: String) {
 
     object Register : Screen("register")
@@ -41,7 +40,6 @@ sealed class Screen(val route: String) {
     }
 }
 
-// ================= BOTTOM NAV =================
 sealed class BottomItem(
     val route: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -60,7 +58,6 @@ private val bottomItems = listOf(
     BottomItem.Profile
 )
 
-// ================= NAVGRAPH =================
 @Composable
 fun NavGraph(navController: NavHostController) {
 
@@ -69,7 +66,6 @@ fun NavGraph(navController: NavHostController) {
         startDestination = Screen.Register.route
     ) {
 
-        // ================= REGISTER =================
         composable(Screen.Register.route) {
 
             val regViewModel: RegisterViewModel = viewModel()
@@ -87,7 +83,6 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ================= LOGIN =================
         composable(Screen.Login.route) {
 
             LoginScreen(
@@ -103,7 +98,6 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ================= HOME =================
         composable(Screen.Home.route) {
             MainScaffold(navController) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -112,7 +106,6 @@ fun NavGraph(navController: NavHostController) {
             }
         }
 
-        // ================= MATCHES =================
         composable(Screen.Matches.route) {
             MainScaffold(navController) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -121,7 +114,6 @@ fun NavGraph(navController: NavHostController) {
             }
         }
 
-        // ================= CHAT =================
         composable(Screen.Chat.route) {
             MainScaffold(navController) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,14 +122,12 @@ fun NavGraph(navController: NavHostController) {
             }
         }
 
-        // ================= PROFILE (IMPORTANTE) =================
         composable(Screen.Profile.route) {
             MainScaffold(navController) {
                 ProfileScreen(navController = navController)
             }
         }
 
-        // ================= ONBOARDING STEP 1 =================
         composable(
             route = Screen.MusicalProfile.route,
             arguments = listOf(navArgument("userId") { type = NavType.LongType })
@@ -152,7 +142,6 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ================= ONBOARDING STEP 2 =================
         composable(
             route = Screen.MusicalProfileStep2.route,
             arguments = listOf(navArgument("userId") { type = NavType.LongType })
@@ -171,7 +160,6 @@ fun NavGraph(navController: NavHostController) {
     }
 }
 
-// ================= MAIN SCAFFOLD =================
 @Composable
 fun MainScaffold(
     navController: NavHostController,

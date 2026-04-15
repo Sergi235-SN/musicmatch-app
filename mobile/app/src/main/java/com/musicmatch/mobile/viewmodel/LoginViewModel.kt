@@ -31,7 +31,6 @@ class LoginViewModel : ViewModel() {
         password.value = newPassword
     }
 
-    // ================= LOGIN MANUAL =================
     fun onLoginClicked(
         context: Context,
         onSuccess: (Long) -> Unit
@@ -76,7 +75,6 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    // ================= TOKEN VALIDATION =================
     fun checkLogin(
         context: Context,
         onLoggedIn: (String) -> Unit,

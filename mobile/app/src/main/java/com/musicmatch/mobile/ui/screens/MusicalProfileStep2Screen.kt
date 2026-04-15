@@ -66,7 +66,6 @@ fun MusicalProfileStep2Screen(
             .background(ColorFondo)
     ) {
 
-        // ================= HEADER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,7 +81,6 @@ fun MusicalProfileStep2Screen(
             )
         }
 
-        // ================= BODY =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -96,7 +94,6 @@ fun MusicalProfileStep2Screen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // 🔼 AVATAR (posición más compacta arriba)
                 Box(
                     modifier = Modifier
                         .size(135.dp)
@@ -135,10 +132,8 @@ fun MusicalProfileStep2Screen(
                     }
                 }
 
-                // 🔽 SEPARACIÓN CONSISTENTE (AUMENTADA)
                 Spacer(modifier = Modifier.height(60.dp))
 
-                // ================= BIO =================
                 OutlinedTextField(
                     value = viewModel.biography,
                     onValueChange = {
@@ -170,7 +165,6 @@ fun MusicalProfileStep2Screen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ================= CITY =================
                 var expanded by remember { mutableStateOf(false) }
 
                 ExposedDropdownMenuBox(
@@ -207,7 +201,6 @@ fun MusicalProfileStep2Screen(
 
                 Spacer(modifier = Modifier.height(50.dp))
 
-                // ================= BUTTON =================
                 Button(
                     onClick = {
                         viewModel.saveStep2(context, onFinish)
@@ -232,7 +225,6 @@ fun MusicalProfileStep2Screen(
             }
         }
 
-        // ================= FOOTER =================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
