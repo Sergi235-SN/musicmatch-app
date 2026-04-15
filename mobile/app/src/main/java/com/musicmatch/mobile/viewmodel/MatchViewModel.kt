@@ -34,9 +34,6 @@ class MatchViewModel(
     val currentProfile: ProfileCardDTO?
         get() = candidates.getOrNull(currentIndex)
 
-    // =========================
-    // MUSICAL OPTIONS CACHE
-    // =========================
     var availableInstruments by mutableStateOf<List<MusicalOptionDTO>>(emptyList())
         private set
 
@@ -61,9 +58,6 @@ class MatchViewModel(
                 userId = tokenManager.getUserIdFromToken(context)
                     ?: throw Exception("ID no encontrado")
 
-                // =========================
-                // MUSICAL OPTIONS (CORRECTO)
-                // =========================
                 val options = userRepository.getMusicalOptions(token)
 
                 availableInstruments = options.instruments
@@ -72,9 +66,6 @@ class MatchViewModel(
                 instrumentMap = options.instruments.associate { it.id to it.name }
                 styleMap = options.styles.associate { it.id to it.name }
 
-                // =========================
-                // CANDIDATOS
-                // =========================
                 val res = matchRepository.getCandidates(userId, token)
 
                 profileComplete = res.profileComplete

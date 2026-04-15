@@ -42,7 +42,7 @@ fun SmartChip(
     Surface(
         modifier = modifier
             .padding(4.dp)
-            .clickable { onClick() }, // Se ejecuta la lambda onClick
+            .clickable { onClick() }, 
         shape = RoundedCornerShape(20.dp),
         color = containerColor,
         contentColor = contentColor,

@@ -24,7 +24,6 @@ class RegisterViewModel : ViewModel() {
     fun onEmailChange(newEmail: String) = run { user.value = user.value.copy(email = newEmail) }
     fun onPasswordChange(newPassword: String) = run { user.value = user.value.copy(password = newPassword) }
 
-    // Cambiamos onSuccess para que acepte el ID del usuario
     fun onRegisterClicked(context: Context, onSuccess: (Long) -> Unit) {
         val currentUser = user.value
         if (currentUser.username.isBlank() || currentUser.email.isBlank() || currentUser.password.isBlank()) {
@@ -41,7 +40,6 @@ class RegisterViewModel : ViewModel() {
                 if (response.success && response.data != null) {
                     tokenManager.saveToken(context, response.data.token ?: "")
 
-                    // Supongamos que response.data tiene el id del usuario
                     val userId = response.data.id ?: 0L
                     onSuccess(userId)
                 } else {
