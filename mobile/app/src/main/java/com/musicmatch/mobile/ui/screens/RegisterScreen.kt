@@ -82,7 +82,14 @@ fun RegisterScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(80.dp))
+                Text(
+                    text = "Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(30.dp))
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

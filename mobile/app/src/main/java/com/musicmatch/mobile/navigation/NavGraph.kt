@@ -107,10 +107,10 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Home.route) {
+
             MainScaffold(navController) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("HOME")
-                }
+
+                HomeScreen(navController = navController)
             }
         }
 

@@ -15,6 +15,8 @@ import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.UserRepository;
 import com.musicmatch.backend.utils.JwtUtil;
 
+import java.util.regex.Pattern;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -26,7 +28,38 @@ public class UserService {
     private final ProfileRepository profileRepository;
     private final JwtUtil jwtUtil;
 
+    private static final Pattern EMAIL_PATTERN =
+        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+
+    private static final Pattern PASSWORD_PATTERN =
+        Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
+
     public ApiResponse<UserResponse> register(RegisterRequest request) {
+
+        if (request.getUsername() == null || request.getUsername().trim().length() < 3) {
+            return new ApiResponse<>(false,
+                    "El nombre de usuario debe tener al menos 3 caracteres",
+                    null);
+        }
+
+        if (request.getUsername().contains(" ")) {
+            return new ApiResponse<>(false,
+                    "El nombre de usuario no puede contener espacios",
+                    null);
+        }
+
+        if (request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
+            return new ApiResponse<>(false,
+                    "El formato del email no es válido",
+                    null);
+        }
+
+        if (request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+            return new ApiResponse<>(false,
+                    "La contraseña no cumple el mínimo de seguridad",
+                    null);
+        }
+
         if(userRepository.findByEmail(request.getEmail()).isPresent()) {
             return new ApiResponse<>(false, "El email ya está registrado", null);
         }

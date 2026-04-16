@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.musicmatch.backend.dto.*;
+import com.musicmatch.backend.exception.UserBlockedException;
 import com.musicmatch.backend.model.*;
 import com.musicmatch.backend.repository.*;
 
@@ -34,7 +35,7 @@ public class ChatService {
         Profile to = profileRepository.findById(toId).orElseThrow();
 
         if (isBlocked(from, to)) {
-            throw new RuntimeException("Usuario bloqueado");
+            throw new UserBlockedException("No puedes iniciar chat con este usuario");
         }
 
         Optional<Chat> existing = chatRepository.findBetweenProfiles(from, to);

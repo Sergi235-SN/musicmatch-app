@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.password
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -24,9 +27,14 @@ fun CustomLabelledTextField(
     value: String,
     onValueChange: (String) -> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+
+    // ✅ NUEVO (opcional, no rompe nada)
+    keyboardOptions: KeyboardOptions? = null,
+    isPassword: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
+
         Text(
             text = label,
             color = ColorTexto,
@@ -40,9 +48,21 @@ fun CustomLabelledTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(elevation = 6.dp, shape = RoundedCornerShape(6.dp), clip = false),
+                .shadow(
+                    elevation = 6.dp,
+                    shape = RoundedCornerShape(6.dp),
+                    clip = false
+                )
+                // 🔒 bloquea autofill si es password
+                .then(
+                    if (isPassword) Modifier.semantics { password() }
+                    else Modifier
+                ),
+
             visualTransformation = visualTransformation,
             trailingIcon = trailingIcon,
+            keyboardOptions = keyboardOptions ?: KeyboardOptions.Default,
+
             shape = RoundedCornerShape(6.dp),
             singleLine = true,
             textStyle = TextStyle(

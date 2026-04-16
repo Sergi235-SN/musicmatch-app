@@ -47,6 +47,10 @@ class PublicProfileViewModel(
     private val _navigateToChat = MutableStateFlow<Long?>(null)
     val navigateToChat = _navigateToChat.asStateFlow()
 
+    // ✔ NUEVO: eventos para Toast
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage = _toastMessage.asStateFlow()
+
     fun load(userId: Long, token: String) {
         viewModelScope.launch {
             isLoading = true
@@ -68,7 +72,7 @@ class PublicProfileViewModel(
                 chatId = result.chatId
 
             } catch (e: Exception) {
-                error = e.message
+                _toastMessage.value = e.message ?: "Error al cargar perfil"
             } finally {
                 isLoading = false
             }
@@ -80,8 +84,9 @@ class PublicProfileViewModel(
             try {
                 matchRepository.block(token, BlockRequest(targetId))
                 profile = profile?.copy(blockedByMe = true)
+                _toastMessage.value = "Usuario bloqueado"
             } catch (e: Exception) {
-                error = "Error bloqueando usuario"
+                _toastMessage.value = e.message ?: "Error bloqueando usuario"
             }
         }
     }
@@ -91,8 +96,9 @@ class PublicProfileViewModel(
             try {
                 matchRepository.unblock(token, BlockRequest(targetId))
                 profile = profile?.copy(blockedByMe = false)
+                _toastMessage.value = "Usuario desbloqueado"
             } catch (e: Exception) {
-                error = "Error desbloqueando usuario"
+                _toastMessage.value = e.message ?: "Error desbloqueando usuario"
             }
         }
     }
@@ -116,21 +122,26 @@ class PublicProfileViewModel(
                     "PENDING" -> {
                         chatStatus = "PENDING"
                         message = "Solicitud enviada. Esperando respuesta."
+                        _toastMessage.value = message
                     }
 
                     else -> {
-                        message = "Estado desconocido del chat"
+                        _toastMessage.value = "Estado desconocido del chat"
                     }
                 }
 
             } catch (e: Exception) {
-                error = "Error al iniciar chat"
+                _toastMessage.value = e.message ?: "Error al iniciar chat"
             }
         }
     }
 
     fun clearNavigation() {
         _navigateToChat.value = null
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 
     class Factory(

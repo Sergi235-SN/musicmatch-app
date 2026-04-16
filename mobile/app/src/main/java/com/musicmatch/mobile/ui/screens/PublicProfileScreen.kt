@@ -60,10 +60,7 @@ fun PublicProfileScreen(
     }
 
     val profile = viewModel.profile
-    val isBlocked = profile?.blockedByMe == true
-    val status = viewModel.chatStatus
     val token = tokenManager.getToken(context) ?: ""
-
     val footerHeight = 72.dp
 
     Scaffold(
@@ -103,7 +100,20 @@ fun PublicProfileScreen(
                     )
                 }
 
+                // 🔴 NUEVO CASO: el otro usuario TE bloqueó
+                profile?.blockedMe == true -> {
+                    Text(
+                        text = "Este usuario te ha bloqueado",
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
                 else -> {
+
+                    val status = viewModel.chatStatus
+                    val isBlocked = profile.blockedByMe == true
 
                     Box(
                         modifier = Modifier
