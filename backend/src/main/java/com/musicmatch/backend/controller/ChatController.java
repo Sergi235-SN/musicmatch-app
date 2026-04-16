@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 import com.musicmatch.backend.dto.*;
-import com.musicmatch.backend.service.MatchService;
+import com.musicmatch.backend.service.ChatService;
 import com.musicmatch.backend.utils.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final MatchService matchService;
+    private final ChatService chatService;
     private final JwtUtil jwtUtil;
 
     private Long extractUserId(String authHeader) {
@@ -35,7 +35,7 @@ public class ChatController {
     ) {
         Long userId = extractUserId(authHeader);
 
-        return matchService.requestOrGetChat(
+        return chatService.requestOrGetChat(
             userId,
             request.getTargetId()
         );
@@ -47,7 +47,7 @@ public class ChatController {
             @PathVariable Long chatId
     ) {
         Long userId = extractUserId(authHeader);
-        matchService.acceptChat(chatId, userId);
+        chatService.acceptChat(chatId, userId);
     }
 
     @PostMapping("/message")
@@ -57,7 +57,7 @@ public class ChatController {
     ) {
         Long userId = extractUserId(authHeader);
 
-        matchService.sendMessage(
+        chatService.sendMessage(
             request.getChatId(),
             userId,
             request.getContent()
@@ -69,7 +69,7 @@ public class ChatController {
             @RequestHeader("Authorization") String authHeader
     ) {
         Long userId = extractUserId(authHeader);
-        return matchService.getChatPreviews(userId);
+        return chatService.getChatPreviews(userId);
     }
 
     @GetMapping("/{chatId}/messages")
@@ -79,7 +79,7 @@ public class ChatController {
     ) {
         Long userId = extractUserId(authHeader);
 
-        return matchService.getMessages(chatId, userId);
+        return chatService.getMessages(chatId, userId);
     }
 
     @PostMapping("/{chatId}/reject")
@@ -88,7 +88,7 @@ public class ChatController {
             @PathVariable Long chatId
     ) {
         Long userId = extractUserId(authHeader);
-        matchService.rejectChat(chatId, userId);
+        chatService.rejectChat(chatId, userId);
     }
 
     @GetMapping("/pending")
@@ -96,6 +96,6 @@ public class ChatController {
             @RequestHeader("Authorization") String authHeader
     ) {
         Long userId = extractUserId(authHeader);
-        return matchService.getPendingChats(userId);
+        return chatService.getPendingChats(userId);
     }
 }
