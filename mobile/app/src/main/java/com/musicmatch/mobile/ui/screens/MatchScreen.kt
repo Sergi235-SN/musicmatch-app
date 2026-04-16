@@ -23,15 +23,20 @@ import com.musicmatch.mobile.utils.TokenManager
 fun MatchesScreen(navController: NavController) {
 
     val context = LocalContext.current
+
     val tokenManager = remember { TokenManager() }
+    val apiService = remember { ApiService.create() }
+
+    val matchRepository = remember { MatchRepository(apiService) }
+    val userRepository = remember { UserRepository(apiService) }
 
     val viewModel: MatchViewModel = viewModel(
         factory = remember {
             object : androidx.lifecycle.ViewModelProvider.Factory {
                 override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                     return MatchViewModel(
-                        matchRepository = MatchRepository(ApiService.create()),
-                        userRepository = UserRepository(ApiService.create()),
+                        matchRepository = matchRepository,
+                        userRepository = userRepository,
                         tokenManager = tokenManager
                     ) as T
                 }
@@ -86,7 +91,6 @@ fun MatchesScreen(navController: NavController) {
                 else -> {
                     SwipeCardStack(
                         viewModel = viewModel,
-                        context = context,
                         navController = navController
                     )
                 }

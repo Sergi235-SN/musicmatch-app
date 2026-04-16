@@ -3,10 +3,16 @@ package com.musicmatch.mobile.data
 import com.musicmatch.mobile.model.City
 import com.musicmatch.mobile.model.dto.ApiResponse
 import com.musicmatch.mobile.model.dto.BlockRequest
+import com.musicmatch.mobile.model.dto.ChatPreview
+import com.musicmatch.mobile.model.dto.ChatRequest
+import com.musicmatch.mobile.model.dto.ChatResponse
 import com.musicmatch.mobile.model.dto.LoginRequest
 import com.musicmatch.mobile.model.dto.LoginResponse
 import com.musicmatch.mobile.model.dto.MatchCandidatesResponse
+import com.musicmatch.mobile.model.dto.MessageRequest
+import com.musicmatch.mobile.model.dto.MessageResponse
 import com.musicmatch.mobile.model.dto.MusicalOptionsResponse
+import com.musicmatch.mobile.model.dto.PublicProfileResponse
 import com.musicmatch.mobile.model.dto.RegisterRequest
 import com.musicmatch.mobile.model.dto.SwipeRequest
 import com.musicmatch.mobile.model.dto.SwipeResponse
@@ -35,32 +41,42 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): ApiResponse<LoginResponse>
 
+    @GET("api/auth/me")
+    suspend fun getCurrentUser(
+        @Header("Authorization") token: String
+    ): ApiResponse<UserProfileResponse>
+
     @GET("api/profile/musical-options")
-    suspend fun getMusicalOptions(@Header("Authorization") token: String): MusicalOptionsResponse
+    suspend fun getMusicalOptions(
+        @Header("Authorization") token: String
+    ): MusicalOptionsResponse
 
     @GET("api/profile/cities")
-    suspend fun getCities(@Header("Authorization") token: String): List<City>
-    @GET("api/auth/me")
-    suspend fun getCurrentUser(@Header("Authorization") token: String): ApiResponse<UserProfileResponse>
+    suspend fun getCities(
+        @Header("Authorization") token: String
+    ): List<City>
 
-    @PATCH("api/profile/{userId}")
+    @PATCH("api/profile")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
-        @Path("userId") userId: Long,
         @Body request: UpdateProfileRequest
     ): Response<Void>
 
     @Multipart
-    @POST("api/profile/{userId}/avatar")
+    @POST("api/profile/avatar")
     suspend fun uploadAvatar(
         @Header("Authorization") token: String,
-        @Path("userId") userId: Long,
         @Part file: MultipartBody.Part
     ): String
 
-    @GET("api/matches/{userId}/candidates")
-    suspend fun getCandidates(
+    @GET("api/profile/public/{userId}")
+    suspend fun getPublicProfile(
         @Path("userId") userId: Long,
+        @Header("Authorization") token: String
+    ): PublicProfileResponse
+
+    @GET("api/matches/candidates")
+    suspend fun getCandidates(
         @Header("Authorization") token: String
     ): MatchCandidatesResponse
 
@@ -76,10 +92,51 @@ interface ApiService {
         @Body request: BlockRequest
     )
 
-    @GET("api/profile/public/{userId}")
-    suspend fun getPublicProfile(
-        @Path("userId") userId: Long
-    ): UserProfileResponse
+    @POST("api/matches/unblock")
+    suspend fun unblock(
+        @Header("Authorization") token: String,
+        @Body request: BlockRequest
+    )
+
+    @POST("api/chats/request-or-get")
+    suspend fun requestOrGetChat(
+        @Header("Authorization") token: String,
+        @Body request: ChatRequest
+    ): ChatResponse
+
+    @GET("api/chats/pending")
+    suspend fun getPendingChats(
+        @Header("Authorization") token: String
+    ): List<ChatPreview>
+
+    @POST("api/chats/{chatId}/accept")
+    suspend fun acceptChat(
+        @Header("Authorization") token: String,
+        @Path("chatId") chatId: Long
+    )
+
+    @POST("api/chats/{chatId}/reject")
+    suspend fun rejectChat(
+        @Header("Authorization") token: String,
+        @Path("chatId") chatId: Long
+    )
+
+    @POST("api/chats/message")
+    suspend fun sendMessage(
+        @Header("Authorization") token: String,
+        @Body request: MessageRequest
+    )
+
+    @GET("api/chats")
+    suspend fun getChats(
+        @Header("Authorization") token: String
+    ): List<ChatPreview>
+
+    @GET("api/chats/{chatId}/messages")
+    suspend fun getMessages(
+        @Header("Authorization") token: String,
+        @Path("chatId") chatId: Long
+    ): List<MessageResponse>
 
     companion object {
         fun create(): ApiService {

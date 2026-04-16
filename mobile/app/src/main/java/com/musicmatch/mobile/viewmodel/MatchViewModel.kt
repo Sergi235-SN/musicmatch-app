@@ -43,7 +43,6 @@ class MatchViewModel(
     private var instrumentMap = mapOf<Long, String>()
     private var styleMap = mapOf<Long, String>()
 
-    private var userId: Long = 0L
     private var token: String = ""
 
     fun load(context: Context) {
@@ -55,9 +54,6 @@ class MatchViewModel(
                 token = tokenManager.getToken(context)
                     ?: throw Exception("Sesión expirada")
 
-                userId = tokenManager.getUserIdFromToken(context)
-                    ?: throw Exception("ID no encontrado")
-
                 val options = userRepository.getMusicalOptions(token)
 
                 availableInstruments = options.instruments
@@ -66,7 +62,7 @@ class MatchViewModel(
                 instrumentMap = options.instruments.associate { it.id to it.name }
                 styleMap = options.styles.associate { it.id to it.name }
 
-                val res = matchRepository.getCandidates(userId, token)
+                val res = matchRepository.getCandidates(token)
 
                 profileComplete = res.profileComplete
                 candidates = res.candidates
@@ -97,7 +93,6 @@ class MatchViewModel(
 
     fun swipe(
         liked: Boolean,
-        context: Context,
         onMatch: (Boolean) -> Unit = {}
     ) {
         val current = currentProfile ?: return
@@ -106,12 +101,15 @@ class MatchViewModel(
             try {
                 val res = matchRepository.swipe(
                     token,
-                    SwipeRequest(userId, current.id, liked)
+                    SwipeRequest(
+                        targetId = current.id,
+                        liked = liked
+                    )
                 )
 
                 if (res.match) onMatch(true)
 
-                next()
+                refreshCandidates()
 
             } catch (e: Exception) {
                 message = "Error en la conexión"
@@ -119,12 +117,29 @@ class MatchViewModel(
         }
     }
 
-    private fun next() {
-        if (candidates.isNotEmpty() && currentIndex < candidates.lastIndex) {
-            currentIndex++
-        } else {
-            candidates = emptyList()
-            currentIndex = 0
+
+    private fun refreshCandidates() {
+        viewModelScope.launch {
+            try {
+                val res = matchRepository.getCandidates(token)
+
+                profileComplete = res.profileComplete
+                candidates = res.candidates
+
+                currentIndex = 0
+
+                message = when {
+                    res.candidates.isEmpty() ->
+                        "No hay más músicos cerca de ti"
+                    !res.message.isNullOrBlank() ->
+                        res.message
+                    else -> null
+                }
+
+            } catch (e: Exception) {
+                message = "Error refrescando candidatos"
+            }
         }
     }
+
 }

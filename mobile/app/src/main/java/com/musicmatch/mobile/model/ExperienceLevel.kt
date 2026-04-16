@@ -1,6 +1,6 @@
 package com.musicmatch.mobile.model;
 
-public enum  ExperienceLevel {
+enum class ExperienceLevel {
     PRINCIPIANTE,
     INTERMEDIO,
     AVANZADO

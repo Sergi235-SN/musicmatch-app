@@ -1,10 +1,10 @@
 package com.musicmatch.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
-public class BlockRequest {
+@AllArgsConstructor
+public class ChatRequest {
     private Long targetId;
 }

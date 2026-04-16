@@ -44,6 +44,10 @@ sealed class Screen(val route: String) {
     }
 }
 
+object ChatDetail : Screen("chat_detail/{chatId}") {
+    fun createRoute(chatId: Long) = "chat_detail/$chatId"
+}
+
 sealed class BottomItem(
     val route: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -118,11 +122,30 @@ fun NavGraph(navController: NavHostController) {
             }
         }
 
-        composable(Screen.Chat.route) {
+        composable("chat") {
             MainScaffold(navController) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("CHAT")
-                }
+                ChatScreen(navController)
+            }
+        }
+
+        composable("chat_requests") {
+            MainScaffold(navController) {
+                ChatRequestsScreen(navController)
+            }
+        }
+
+        composable(
+            route = "chat_detail/{chatId}",
+            arguments = listOf(navArgument("chatId") { type = NavType.LongType })
+        ) { backStackEntry ->
+
+            val chatId = backStackEntry.arguments?.getLong("chatId") ?: 0L
+
+            MainScaffold(navController) {
+                ChatDetailScreen(
+                    chatId = chatId,
+                    navController = navController
+                )
             }
         }
 

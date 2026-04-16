@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.musicmatch.backend.model.Match;
@@ -26,12 +27,13 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     """)
     boolean existsBetweenProfiles(Profile p1, Profile p2);
 
+    @Modifying
     @Query("""
         DELETE FROM Match m
-        WHERE (m.user1 = :p1 AND m.user2 = :p2)
-           OR (m.user1 = :p2 AND m.user2 = :p1)
+        WHERE (m.user1.id = :p1 AND m.user2.id = :p2)
+        OR (m.user1.id = :p2 AND m.user2.id = :p1)
     """)
-    void deleteBetweenProfiles(Profile p1, Profile p2);
+    void deleteBetweenProfiles(Long p1, Long p2);
 
     @Query("""
         SELECT m FROM Match m

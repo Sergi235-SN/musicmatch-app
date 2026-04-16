@@ -23,7 +23,6 @@ class MusicalProfileViewModel(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-
     val selectedInstruments =
         mutableStateListOf<Pair<MusicalOptionDTO, ExperienceLevel>>()
 
@@ -46,16 +45,9 @@ class MusicalProfileViewModel(
     var username by mutableStateOf<String?>(null)
     var email by mutableStateOf<String?>(null)
 
-
     private fun getToken(context: Context): String? {
         return tokenManager.getToken(context)
     }
-
-    private fun getUserId(context: Context): Long {
-        return tokenManager.getUserIdFromToken(context)
-            ?: throw IllegalStateException("Token inválido o sin userId")
-    }
-
 
     fun loadData(context: Context) {
         val token = getToken(context) ?: return
@@ -99,10 +91,8 @@ class MusicalProfileViewModel(
         }
     }
 
-
     fun saveStep1(context: Context, onNext: () -> Unit) {
         val token = getToken(context) ?: return
-        val userId = getUserId(context)
 
         viewModelScope.launch {
             isLoading = true
@@ -116,7 +106,7 @@ class MusicalProfileViewModel(
                     }
                 )
 
-                repository.updateProfile(token, userId, request)
+                repository.updateProfile(token, request)
                 onNext()
 
             } finally {
@@ -125,10 +115,8 @@ class MusicalProfileViewModel(
         }
     }
 
-
     fun saveStep2(context: Context, onFinish: () -> Unit) {
         val token = getToken(context) ?: return
-        val userId = getUserId(context)
 
         viewModelScope.launch {
             isLoading = true
@@ -144,7 +132,7 @@ class MusicalProfileViewModel(
                         file.asRequestBody("image/*".toMediaTypeOrNull())
                     )
 
-                    val filename = repository.uploadAvatar(token, userId, body)
+                    val filename = repository.uploadAvatar(token, body)
 
                     if (!filename.isNullOrEmpty()) {
                         currentAvatarUrl = NetworkConfig.getAvatarUrl(filename)
@@ -156,7 +144,7 @@ class MusicalProfileViewModel(
                     cityId = selectedCityId
                 )
 
-                repository.updateProfile(token, userId, request)
+                repository.updateProfile(token, request)
 
                 onFinish()
 
@@ -166,10 +154,8 @@ class MusicalProfileViewModel(
         }
     }
 
-
     fun saveFullProfile(context: Context, onFinish: () -> Unit) {
         val token = getToken(context) ?: return
-        val userId = getUserId(context)
 
         viewModelScope.launch {
             isLoading = true
@@ -187,7 +173,7 @@ class MusicalProfileViewModel(
                         file.asRequestBody("image/*".toMediaTypeOrNull())
                     )
 
-                    uploadedFilename = repository.uploadAvatar(token, userId, body)
+                    uploadedFilename = repository.uploadAvatar(token, body)
                 }
 
                 val request = UpdateProfileRequest(
@@ -200,7 +186,7 @@ class MusicalProfileViewModel(
                     }
                 )
 
-                repository.updateProfile(token, userId, request)
+                repository.updateProfile(token, request)
 
                 uploadedFilename?.let {
                     currentAvatarUrl = NetworkConfig.getAvatarUrl(it)
@@ -214,13 +200,13 @@ class MusicalProfileViewModel(
         }
     }
 
-
     private fun uriToFile(context: Context, uri: Uri): File {
         val inputStream = context.contentResolver.openInputStream(uri)!!
         val file = File.createTempFile("upload", ".jpg", context.cacheDir)
         file.outputStream().use { inputStream.copyTo(it) }
         return file
     }
+
 
 
     class Factory(

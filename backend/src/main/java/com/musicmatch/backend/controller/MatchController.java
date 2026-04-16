@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.musicmatch.backend.dto.*;
 import com.musicmatch.backend.service.MatchService;
+import com.musicmatch.backend.utils.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,35 +14,64 @@ import lombok.RequiredArgsConstructor;
 public class MatchController {
 
     private final MatchService matchService;
+    private final JwtUtil jwtUtil;
 
-    @GetMapping("/{userId}/candidates")
-    public MatchCandidatesResponse getCandidates(@PathVariable Long userId) {
+    @GetMapping("/candidates")
+    public MatchCandidatesResponse getCandidates(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        Long userId = extractUserId(authHeader);
         return matchService.getCandidates(userId);
     }
 
     @PostMapping("/swipe")
-    public SwipeResponse swipe(@RequestBody SwipeRequest request) {
+    public SwipeResponse swipe(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody SwipeRequest request
+    ) {
+        Long userId = extractUserId(authHeader);
+
         return matchService.swipe(
-            request.getUserId(),
+            userId,
             request.getTargetId(),
             request.isLiked()
         );
     }
 
     @PostMapping("/block")
-    public void block(@RequestBody BlockRequest request) {
+    public void block(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody BlockRequest request
+    ) {
+        Long userId = extractUserId(authHeader);
+
         matchService.block(
-            request.getUserId(),
+            userId,
             request.getTargetId()
         );
     }
 
     @PostMapping("/unblock")
-    public void unblock(@RequestBody BlockRequest request) {
+    public void unblock(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody BlockRequest request
+    ) {
+        Long userId = extractUserId(authHeader);
+
         matchService.unblock(
-            request.getUserId(),
+            userId,
             request.getTargetId()
         );
+    }
+
+    private Long extractUserId(String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+
+        if (!jwtUtil.isTokenValid(token)) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        return jwtUtil.extractUserId(token);
     }
 
 }

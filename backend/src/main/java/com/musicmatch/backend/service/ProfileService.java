@@ -12,16 +12,17 @@ import com.musicmatch.backend.dto.InstrumentLevelRequest;
 import com.musicmatch.backend.dto.InstrumentLevelResponse;
 import com.musicmatch.backend.dto.MusicalOptionDTO;
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
+import com.musicmatch.backend.dto.PublicProfileResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
-import com.musicmatch.backend.dto.UserProfileResponse;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.model.Instrument;
 import com.musicmatch.backend.model.Profile;
 import com.musicmatch.backend.model.ProfileInstrument;
 import com.musicmatch.backend.model.Style;
-import com.musicmatch.backend.model.User;
+import com.musicmatch.backend.repository.ChatRepository;
 import com.musicmatch.backend.repository.CityRepository;
 import com.musicmatch.backend.repository.InstrumentRepository;
+import com.musicmatch.backend.repository.ProfileBlockRepository;
 import com.musicmatch.backend.repository.ProfileInstrumentRepository;
 import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.StyleRepository;
@@ -43,6 +44,8 @@ public class ProfileService {
     private final StyleRepository styleRepository;
     private final ProfileInstrumentRepository profileInstrumentRepository;
     private final CityRepository cityRepository;
+    private final ProfileBlockRepository blockRepository;
+    private final ChatRepository chatRepository;
 
     @Transactional
     public void updateProfilePartial(Long userId, UpdateProfileRequest request) {
@@ -178,41 +181,55 @@ public class ProfileService {
         return "/api/profile/avatar/" + fileName;
     }
     
-    public UserProfileResponse getPublicProfile(Long userId) {
+    public PublicProfileResponse getPublicProfile(Long meId, Long targetId) {
 
-        Profile profile = profileRepository.findById(userId)
+        Profile me = profileRepository.findById(meId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Profile target = profileRepository.findById(targetId)
                 .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
 
-        User user = profile.getUser();
+        var chatOpt = chatRepository.findBetweenProfiles(me, target);
 
-        return new UserProfileResponse(
-                user.getId(),
-                user.getUsername(),
+        String chatStatus = "NONE";
+        Long chatId = null;
 
-                profile.getBiography(),
+        if (chatOpt.isPresent()) {
+            var chat = chatOpt.get();
+            chatStatus = chat.getStatus().name();
+            chatId = chat.getId();
+        }
 
-                profile.getCity() != null ? profile.getCity().getId() : null,
-                profile.getCity() != null ? profile.getCity().getName() : null,
+        return new PublicProfileResponse(
+            target.getId(),
+            target.getUser().getUsername(),
+            target.getBiography(),
+            target.getCity() != null ? target.getCity().getName() : "",
+            target.getCity() != null ? target.getCity().getId() : null,
+            target.getProfilePicture(),
+            target.getStyles().stream().map(Style::getId).toList(),
+            target.getProfileInstruments().stream()
+                .map(pi -> new InstrumentLevelResponse(
+                    pi.getInstrument().getId(),
+                    pi.getLevel()
+                ))
+                .toList(),
+            target.getExperienceLevel(),
 
-                profile.getExperienceLevel(),
+            blockedByMe(me, target),
+            blockedMe(me, target),
 
-                profile.getStyles()
-                        .stream()
-                        .map(Style::getId)
-                        .toList(),
-
-                profile.getProfileInstruments()
-                        .stream()
-                        .map(pi -> new InstrumentLevelResponse(
-                                pi.getInstrument().getId(),
-                                pi.getLevel()
-                        ))
-                        .toList(),
-
-                profile.getProfilePicture(),
-
-                user.getEmail()
+            chatStatus,
+            chatId
         );
+    }
+
+    private boolean blockedByMe(Profile me, Profile other) {
+        return blockRepository.existsByBlockerAndBlocked(me, other);
+    }
+
+    private boolean blockedMe(Profile me, Profile other) {
+        return blockRepository.existsByBlockerAndBlocked(other, me);
     }
 
 }

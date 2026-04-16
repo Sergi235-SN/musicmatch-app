@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.musicmatch.mobile.data.ApiService
+import com.musicmatch.mobile.data.repository.MatchRepository
 import com.musicmatch.mobile.data.repository.UserRepository
 import com.musicmatch.mobile.model.ExperienceLevel
 import com.musicmatch.mobile.ui.components.SmartChip
@@ -36,25 +37,33 @@ fun PublicProfileScreen(
     userId: Long,
     navController: NavController
 ) {
+
     val context = LocalContext.current
-    val token = remember { TokenManager().getToken(context) }
+    val tokenManager = remember { TokenManager() }
+
+    val apiService = remember { ApiService.create() }
+    val userRepository = remember { UserRepository(apiService) }
+    val matchRepository = remember { MatchRepository(apiService) }
 
     val viewModel: PublicProfileViewModel = viewModel(
         factory = remember {
-            PublicProfileViewModel.Factory(
-                UserRepository(ApiService.create())
-            )
+            PublicProfileViewModel.Factory(userRepository, matchRepository)
         }
     )
 
-    var showInstruments by remember { mutableStateOf(false) }
-    var showStyles by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var showUnblockDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
-        viewModel.load(userId, token ?: "")
+        val token = tokenManager.getToken(context) ?: ""
+        viewModel.load(userId, token)
     }
 
     val profile = viewModel.profile
+    val isBlocked = profile?.blockedByMe == true
+    val status = viewModel.chatStatus
+    val token = tokenManager.getToken(context) ?: ""
+
     val footerHeight = 72.dp
 
     Scaffold(
@@ -71,7 +80,7 @@ fun PublicProfileScreen(
                 )
             )
         }
-    ) { scaffoldPadding ->
+    ) { padding ->
 
         Box(
             modifier = Modifier
@@ -80,6 +89,7 @@ fun PublicProfileScreen(
         ) {
 
             when {
+
                 viewModel.isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
@@ -95,137 +105,196 @@ fun PublicProfileScreen(
 
                 else -> {
 
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
                             .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                top = scaffoldPadding.calculateTopPadding() + 20.dp,
-                                bottom = footerHeight + 40.dp
+                                top = padding.calculateTopPadding(),
+                                bottom = footerHeight
                             ),
-                        verticalArrangement = Arrangement.Center
+                        contentAlignment = Alignment.Center
                     ) {
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(90.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.LightGray),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val image = viewModel.profileImageUrl
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
 
-                                if (!image.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = image,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(90.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.LightGray),
+                                    contentAlignment = Alignment.Center
+                                ) {
+
+                                    val image = viewModel.profileImageUrl
+
+                                    if (!image.isNullOrEmpty()) {
+                                        AsyncImage(
+                                            model = image,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Person,
+                                            null,
+                                            modifier = Modifier.size(40.dp),
+                                            tint = Color.Gray
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.width(16.dp))
+
+                                Column {
+                                    Text(
+                                        profile.username,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        color = ColorTexto
                                     )
-                                } else {
-                                    Icon(
-                                        Icons.Default.Person,
-                                        null,
-                                        modifier = Modifier.size(40.dp),
-                                        tint = Color.Gray
+
+                                    Text(profile.cityName ?: "", color = Color.Gray)
+
+                                    Text(
+                                        profile.experienceLevel.name,
+                                        color = Color.Gray
                                     )
                                 }
                             }
 
-                            Spacer(Modifier.width(16.dp))
+                            Spacer(Modifier.height(28.dp))
 
-                            Column {
-                                Text(
-                                    profile.username,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    color = ColorTexto
-                                )
+                            Text("Instrumentos", fontWeight = FontWeight.Bold)
 
-                                Text(profile.cityName ?: "", color = Color.Gray)
+                            Spacer(Modifier.height(8.dp))
 
-                                Text(
-                                    text = profile.experienceLevel?.toString() ?: "",
-                                    color = Color.Gray
-                                )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                profile.instruments?.take(6)?.forEach { inst ->
 
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-
-                        Text("Instrumentos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-
-                        val instruments = profile.instruments ?: emptyList()
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val visible = instruments.take(6)
-
-                            visible.forEach { inst ->
-                                val name =
-                                    viewModel.availableInstruments
+                                    val name = viewModel.availableInstruments
                                         .find { it.id == inst.instrumentId }
                                         ?.name ?: "Instrumento"
 
-                                SmartChip(
-                                    text = name,
-                                    level = inst.level ?: ExperienceLevel.PRINCIPIANTE
-                                )
+                                    SmartChip(
+                                        text = name,
+                                        level = inst.level ?: ExperienceLevel.PRINCIPIANTE
+                                    )
+                                }
                             }
 
-                            if (instruments.size > 6) {
-                                SmartChip(
-                                    text = "+${instruments.size - 6}",
-                                    onClick = { showInstruments = true }
-                                )
-                            }
-                        }
+                            Spacer(Modifier.height(16.dp))
 
-                        Spacer(Modifier.height(16.dp))
+                            Text("Estilos", fontWeight = FontWeight.Bold)
 
-                        Text("Estilos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Spacer(Modifier.height(8.dp))
 
-                        val styles = profile.styleIds ?: emptyList()
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                profile.styleIds?.take(6)?.forEach { id ->
 
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val visible = styles.take(6)
-
-                            visible.forEach { id ->
-                                val name =
-                                    viewModel.availableStyles
+                                    val name = viewModel.availableStyles
                                         .find { it.id == id }
                                         ?.name ?: "Estilo"
 
-                                SmartChip(text = name)
+                                    SmartChip(text = name)
+                                }
                             }
 
-                            if (styles.size > 6) {
-                                SmartChip(
-                                    text = "+${styles.size - 6}",
-                                    onClick = { showStyles = true }
+                            Spacer(Modifier.height(28.dp))
+
+                            when {
+
+                                isBlocked -> {
+                                    Button(
+                                        onClick = {},
+                                        enabled = false,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.DarkGray
+                                        )
+                                    ) {
+                                        Text("Usuario bloqueado")
+                                    }
+                                }
+
+                                status == "PENDING" -> {
+                                    Button(
+                                        onClick = {},
+                                        enabled = false,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Gray
+                                        )
+                                    ) {
+                                        Text("Solicitud pendiente")
+                                    }
+                                }
+
+                                status == "ACTIVE" -> {
+                                    Button(
+                                        onClick = {
+                                            viewModel.chatId?.let {
+                                                navController.navigate("chat_detail/$it")
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = ColorSecundario
+                                        )
+                                    ) {
+                                        Text("Ir al chat")
+                                    }
+                                }
+
+                                else -> {
+                                    Button(
+                                        onClick = {
+                                            viewModel.onChatClicked(profile.id, token)
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = ColorSecundario
+                                        )
+                                    ) {
+                                        Text("Iniciar chat")
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(12.dp))
+
+                            Button(
+                                onClick = {
+                                    if (isBlocked) showUnblockDialog = true
+                                    else showBlockDialog = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isBlocked)
+                                        Color(0xFF2E7D32)
+                                    else
+                                        Color.Red
                                 )
+                            ) {
+                                Text(if (isBlocked) "Desbloquear" else "Bloquear")
                             }
-                        }
 
-                        Spacer(Modifier.height(32.dp))
-
-                        Button(
-                            onClick = { },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = ColorSecundario)
-                        ) {
-                            Text("Iniciar chat", color = Color.White)
+                            Spacer(modifier = Modifier.height(24.dp))
                         }
                     }
                 }
@@ -239,60 +308,45 @@ fun PublicProfileScreen(
                     .background(ColorPrincipal)
             )
 
-            if (showInstruments) {
+            if (showBlockDialog) {
                 AlertDialog(
-                    onDismissRequest = { showInstruments = false },
+                    onDismissRequest = { showBlockDialog = false },
                     confirmButton = {
-                        TextButton(onClick = { showInstruments = false }) {
-                            Text("Cerrar")
+                        TextButton(onClick = {
+                            viewModel.block(token, profile!!.id)
+                            showBlockDialog = false
+                        }) {
+                            Text("Bloquear")
                         }
                     },
-                    title = { Text("Instrumentos") },
-                    text = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            profile?.instruments?.forEach { inst ->
-                                val name =
-                                    viewModel.availableInstruments
-                                        .find { it.id == inst.instrumentId }
-                                        ?.name ?: "Instrumento"
-
-                                SmartChip(
-                                    text = name,
-                                    level = inst.level ?: ExperienceLevel.PRINCIPIANTE
-                                )
-                            }
+                    dismissButton = {
+                        TextButton(onClick = { showBlockDialog = false }) {
+                            Text("Cancelar")
                         }
-                    }
+                    },
+                    title = { Text("Bloquear usuario") },
+                    text = { Text("¿Seguro que quieres bloquear a este usuario?") }
                 )
             }
 
-            if (showStyles) {
+            if (showUnblockDialog) {
                 AlertDialog(
-                    onDismissRequest = { showStyles = false },
+                    onDismissRequest = { showUnblockDialog = false },
                     confirmButton = {
-                        TextButton(onClick = { showStyles = false }) {
-                            Text("Cerrar")
+                        TextButton(onClick = {
+                            viewModel.unblock(token, profile!!.id)
+                            showUnblockDialog = false
+                        }) {
+                            Text("Desbloquear")
                         }
                     },
-                    title = { Text("Estilos") },
-                    text = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            profile?.styleIds?.forEach { id ->
-                                val name =
-                                    viewModel.availableStyles
-                                        .find { it.id == id }
-                                        ?.name ?: "Estilo"
-
-                                SmartChip(text = name)
-                            }
+                    dismissButton = {
+                        TextButton(onClick = { showUnblockDialog = false }) {
+                            Text("Cancelar")
                         }
-                    }
+                    },
+                    title = { Text("Desbloquear usuario") },
+                    text = { Text("¿Quieres desbloquear a este usuario?") }
                 )
             }
         }

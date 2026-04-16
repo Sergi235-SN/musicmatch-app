@@ -1,6 +1,5 @@
 package com.musicmatch.mobile.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -13,14 +12,10 @@ import com.musicmatch.mobile.viewmodel.MatchViewModel
 @Composable
 fun SwipeCardStack(
     viewModel: MatchViewModel,
-    context: Context,
     navController: NavController
 ) {
 
-    val current = viewModel.currentIndex
-    val candidates = viewModel.candidates
-
-    val profile = candidates.getOrNull(current)
+    val profile = viewModel.currentProfile
 
     if (profile == null) {
         Box(
@@ -41,10 +36,10 @@ fun SwipeCardStack(
             profile = profile,
             viewModel = viewModel,
             onLike = {
-                viewModel.swipe(true, context)
+                viewModel.swipe(liked = true)
             },
             onDislike = {
-                viewModel.swipe(false, context)
+                viewModel.swipe(liked = false)
             },
             onOpenProfile = {
                 navController.navigate(
@@ -57,7 +52,10 @@ fun SwipeCardStack(
 
 @Composable
 fun EmptyMatchesState(message: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         Text(message)
     }
 }

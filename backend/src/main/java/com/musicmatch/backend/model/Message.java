@@ -1,5 +1,8 @@
 package com.musicmatch.backend.model;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,28 +10,26 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "profile_block")
+@Table(name = "message")
 @Getter
 @Setter
-@NoArgsConstructor
-public class ProfileBlock {
+public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    private Profile blocker;
+    private Chat chat;
 
     @ManyToOne
-    private Profile blocked;
+    private Profile sender;
 
-    public ProfileBlock(Profile blocker, Profile blocked) {
-        this.blocker = blocker;
-        this.blocked = blocked;
-    }
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime createdAt;
 }

@@ -14,11 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
+import com.musicmatch.backend.dto.PublicProfileResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
-import com.musicmatch.backend.dto.UserProfileResponse;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.repository.CityRepository;
 import com.musicmatch.backend.service.ProfileService;
+import com.musicmatch.backend.utils.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,12 +30,14 @@ public class ProfileController {
 
     private final ProfileService profileService;
     private final CityRepository cityRepository;
+    private final JwtUtil jwtUtil;
 
-    @PatchMapping("/{userId}")
+    @PatchMapping
     public void updateProfile(
-            @PathVariable Long userId,
-            @RequestBody UpdateProfileRequest request) {
-
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UpdateProfileRequest request
+    ) {
+        Long userId = extractUserId(authHeader);
         profileService.updateProfilePartial(userId, request);
     }
 
@@ -49,11 +52,13 @@ public class ProfileController {
         return cityRepository.findAll();
     }
 
-    @PostMapping("/{userId}/avatar")
+    @PostMapping("/avatar")
     public String uploadProfileImage(
-            @PathVariable Long userId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
 
+        Long userId = extractUserId(authHeader);
         return profileService.saveProfileImage(userId, file);
     }
 
@@ -91,8 +96,23 @@ public class ProfileController {
     }
 
     @GetMapping("/public/{userId}")
-    public UserProfileResponse getPublicProfile(@PathVariable Long userId) {
-        return profileService.getPublicProfile(userId);
+    public PublicProfileResponse getPublicProfile(
+            @PathVariable Long userId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+
+        Long meId = extractUserId(authHeader);
+        return profileService.getPublicProfile(meId, userId);
+    }
+
+    private Long extractUserId(String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+
+        if (!jwtUtil.isTokenValid(token)) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        return jwtUtil.extractUserId(token);
     }
 
 }
