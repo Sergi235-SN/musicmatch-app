@@ -100,7 +100,6 @@ fun PublicProfileScreen(
                     )
                 }
 
-                // 🔴 NUEVO CASO: el otro usuario TE bloqueó
                 profile?.blockedMe == true -> {
                     Text(
                         text = "Este usuario te ha bloqueado",

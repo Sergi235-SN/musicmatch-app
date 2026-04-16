@@ -19,33 +19,21 @@ class HomeSearchViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    // =========================
-    // RESULTS
-    // =========================
     private val _profiles = MutableStateFlow<List<ProfileSearchCardDTO>>(emptyList())
     val profiles: StateFlow<List<ProfileSearchCardDTO>> = _profiles
 
-    // =========================
-    // SEARCH STATE
-    // =========================
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
 
     private val _experience = MutableStateFlow<String?>(null)
     val experience: StateFlow<String?> = _experience
 
-    // =========================
-    // FILTER OPTIONS (FROM DB)
-    // =========================
     private val _availableInstruments = MutableStateFlow<List<MusicalOptionDTO>>(emptyList())
     val availableInstruments: StateFlow<List<MusicalOptionDTO>> = _availableInstruments
 
     private val _availableStyles = MutableStateFlow<List<MusicalOptionDTO>>(emptyList())
     val availableStyles: StateFlow<List<MusicalOptionDTO>> = _availableStyles
 
-    // =========================
-    // SELECTED FILTERS
-    // =========================
     private val _selectedInstruments = MutableStateFlow<Set<Long>>(emptySet())
     val selectedInstruments: StateFlow<Set<Long>> = _selectedInstruments
 
@@ -54,9 +42,6 @@ class HomeSearchViewModel(
 
     private var searchJob: Job? = null
 
-    // =========================
-    // LOAD FILTERS (DB)
-    // =========================
     fun loadFilters(token: String) {
         viewModelScope.launch {
             runCatching {
@@ -67,9 +52,6 @@ class HomeSearchViewModel(
         }
     }
 
-    // =========================
-    // SEARCH TRIGGERS
-    // =========================
     fun setQuery(value: String, token: String) {
         _query.value = value
         triggerSearch(token)
@@ -104,9 +86,6 @@ class HomeSearchViewModel(
         triggerSearch(token)
     }
 
-    // =========================
-    // CORE SEARCH
-    // =========================
     private fun triggerSearch(token: String) {
 
         searchJob?.cancel()
@@ -125,9 +104,6 @@ class HomeSearchViewModel(
         }
     }
 
-    // =========================
-    // FACTORY
-    // =========================
     class Factory(
         private val searchRepository: ProfileSearchRepository,
         private val userRepository: UserRepository

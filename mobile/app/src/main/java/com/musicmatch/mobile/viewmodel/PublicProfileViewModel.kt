@@ -47,7 +47,6 @@ class PublicProfileViewModel(
     private val _navigateToChat = MutableStateFlow<Long?>(null)
     val navigateToChat = _navigateToChat.asStateFlow()
 
-    // ✔ NUEVO: eventos para Toast
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 

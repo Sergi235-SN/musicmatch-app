@@ -29,7 +29,6 @@ fun CustomLabelledTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable (() -> Unit)? = null,
 
-    // ✅ NUEVO (opcional, no rompe nada)
     keyboardOptions: KeyboardOptions? = null,
     isPassword: Boolean = false
 ) {
@@ -53,7 +52,6 @@ fun CustomLabelledTextField(
                     shape = RoundedCornerShape(6.dp),
                     clip = false
                 )
-                // 🔒 bloquea autofill si es password
                 .then(
                     if (isPassword) Modifier.semantics { password() }
                     else Modifier
