@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +22,7 @@ import coil.compose.AsyncImage
 import com.musicmatch.mobile.ui.theme.*
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.viewmodel.ChatViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,15 +39,25 @@ fun ChatDetailScreen(
     val chats by viewModel.chats.collectAsState()
 
     var text by remember { mutableStateOf("") }
+    var showMenu by remember { mutableStateOf(false) }
 
     val chat = chats.find { it.chatId == chatId }
+    val otherUserId = chat?.otherUserId
 
     LaunchedEffect(chatId) {
         viewModel.load(context)
 
         while (true) {
+
+            val exists = viewModel.chatExists(chatId)
+
+            if (!exists) {
+                navController.popBackStack()
+                break
+            }
+
             viewModel.openChat(chatId)
-            kotlinx.coroutines.delay(2000)
+            delay(2000)
         }
     }
 
@@ -56,10 +65,7 @@ fun ChatDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
 
                         Box(
                             modifier = Modifier
@@ -94,11 +100,34 @@ fun ChatDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                    }
+                },
+                actions = {
+                    Box {
+
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Opciones",
+                                tint = Color.White
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Ver perfil") },
+                                onClick = {
+                                    showMenu = false
+                                    otherUserId?.let {
+                                        navController.navigate("public_profile/$it")
+                                    }
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -195,11 +224,7 @@ fun ChatDetailScreen(
                             shape = RoundedCornerShape(50)
                         )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Enviar",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.Send, null, tint = Color.White)
                 }
             }
         }

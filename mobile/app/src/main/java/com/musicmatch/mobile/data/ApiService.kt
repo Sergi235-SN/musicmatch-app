@@ -12,6 +12,8 @@ import com.musicmatch.mobile.model.dto.MatchCandidatesResponse
 import com.musicmatch.mobile.model.dto.MessageRequest
 import com.musicmatch.mobile.model.dto.MessageResponse
 import com.musicmatch.mobile.model.dto.MusicalOptionsResponse
+import com.musicmatch.mobile.model.dto.ProfileSearchCardDTO
+import com.musicmatch.mobile.model.dto.ProfileSearchRequest
 import com.musicmatch.mobile.model.dto.PublicProfileResponse
 import com.musicmatch.mobile.model.dto.RegisterRequest
 import com.musicmatch.mobile.model.dto.SwipeRequest
@@ -137,6 +139,12 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("chatId") chatId: Long
     ): List<MessageResponse>
+
+    @POST("api/search/profiles")
+    suspend fun searchProfiles(
+        @Header("Authorization") token: String,
+        @Body request: ProfileSearchRequest
+    ): List<ProfileSearchCardDTO>
 
     companion object {
         fun create(): ApiService {

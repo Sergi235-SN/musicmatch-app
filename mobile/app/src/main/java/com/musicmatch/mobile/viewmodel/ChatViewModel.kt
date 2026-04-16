@@ -17,7 +17,6 @@ class ChatViewModel : ViewModel() {
     private val repo = ChatRepository(api)
     private val tokenManager = TokenManager()
 
-
     private val _chats = MutableStateFlow<List<ChatPreview>>(emptyList())
     val chats = _chats.asStateFlow()
 
@@ -73,6 +72,15 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             repo.rejectChat(token, chatId)
             refreshAll()
+        }
+    }
+
+    suspend fun chatExists(chatId: Long): Boolean {
+        return try {
+            repo.getMessages(token, chatId)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
