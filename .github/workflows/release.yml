@@ -97,13 +97,26 @@ release:
       - uses: actions/download-artifact@v4
         with:
           name: backend
+          path: .
 
       - uses: actions/download-artifact@v4
         with:
-          name:
+          name: apk
+          path: .
 
       - name: Create version
         run: echo "VERSION=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Prepare and Zip Files
+        run: |
+          mkdir MusicMatch-Full-Pack
+          # Copiamos la imagen docker y el apk
+          mv backend-image.tar MusicMatch-Full-Pack/
+          mv MusicMatch-oficial.apk MusicMatch-Full-Pack/
+          # Copiamos la infraestructura (manteniendo la estructura de carpetas)
+          cp -r infrastructure MusicMatch-Full-Pack/
+          # Comprimimos la carpeta
+          zip -r MusicMatch-Project-${{ env.VERSION }}.zip MusicMatch-Full-Pack/
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -111,7 +124,4 @@ release:
           tag_name: ${{ env.VERSION }}
           name: Release ${{ env.VERSION }}
           files: |
-            backend-image.tar
-            MusicMatch-oficial.apk
-            infrastructure/docker-compose.yml
-            infrastructure/mysql/init.sql
+            MusicMatch-Project-${{ env.VERSION }}.zip
