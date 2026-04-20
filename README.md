@@ -11,13 +11,12 @@ Este paquete incluye:
 - `backend-image.tar` → Imagen Docker del backend  
 - `MusicMatch-oficial.apk` → Aplicación Android  
 - `docker-compose.yml` → Orquestación de servicios  
-- `init.sql` → Datos iniciales  
 
 ---
 
 ## ⚙️ Requisitos
 
-- Docker o Docker desktop
+- Docker o Docker Desktop  
 - Docker Compose  
 
 ---
@@ -32,12 +31,14 @@ Descargar y descomprimir el release.
 
 ### 2. Cargar imagen Docker
 
-**Windows (PowerShell):**
+Windows (PowerShell):
+
 ```powershell
 docker load -i backend-image.tar
 ```
 
-**Linux / Mac:**
+Linux / Mac:
+
 ```bash
 docker load < backend-image.tar
 ```
@@ -54,15 +55,10 @@ docker-compose up
 
 ## 🗄️ Base de datos
 
-Se inicializa automáticamente con `init.sql`.
+- El esquema se crea automáticamente con Hibernate  
+- Los datos iniciales (instrumentos, estilos, ciudades) se cargan desde el backend al arrancar  
 
-Incluye:
-
-- Instrumentos  
-- Estilos  
-- Ciudades  
-
-⚠️ Solo se ejecuta la primera vez.
+⚠️ Solo se insertan si la base de datos está vacía  
 
 Reset completo:
 
@@ -86,7 +82,7 @@ MusicMatch-oficial.apk
 ## 🔗 Backend
 
 ```
-http://localhost:8080
+http://tu-ip:8080
 ```
 
 ---
@@ -98,8 +94,7 @@ MusicMatch/
 ├── backend/
 ├── mobile/
 ├── infrastructure/
-│   ├── docker-compose.yml
-│   └── mysql/init.sql
+│   └── docker-compose.yml
 ├── README.md
 ```
 
@@ -107,15 +102,13 @@ MusicMatch/
 
 ## ⚠️ Problemas comunes
 
-**PowerShell error:**
+PowerShell error:
 
 ```powershell
 docker load -i backend-image.tar
 ```
 
----
-
-**Datos no cargados:**
+Datos no cargados:
 
 ```bash
 docker-compose down -v
