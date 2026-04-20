@@ -2,12 +2,14 @@ package com.musicmatch.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "city")
 @Getter
 @Setter
+@NoArgsConstructor
 public class City {
 
     @Id
@@ -16,5 +18,9 @@ public class City {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    public City(String name) {
+        this.name = name;
+    }
 
 }
