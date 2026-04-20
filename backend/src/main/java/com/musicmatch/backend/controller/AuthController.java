@@ -1,5 +1,6 @@
 package com.musicmatch.backend.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -91,4 +92,10 @@ public class AuthController {
 
         return new ApiResponse<>(true, "Usuario encontrado", response);
     }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("ok");
+    }
+    
 }

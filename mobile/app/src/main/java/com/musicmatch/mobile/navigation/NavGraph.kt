@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 
 sealed class Screen(val route: String) {
 
+    object ServerConfig : Screen("server_config")
     object Register : Screen("register")
     object Login : Screen("login")
     object Home : Screen("home")
@@ -71,8 +71,12 @@ fun NavGraph(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Register.route
+        startDestination = Screen.ServerConfig.route
     ) {
+
+        composable(Screen.ServerConfig.route) {
+            ServerConfigScreen(navController)
+        }
 
         composable(Screen.Register.route) {
 
