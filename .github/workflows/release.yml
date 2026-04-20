@@ -115,6 +115,8 @@ jobs:
             mv MusicMatch-oficial.apk MusicMatch-Full-Pack/
             # Copiamos la infraestructura (manteniendo la estructura de carpetas)
             cp -r infrastructure MusicMatch-Full-Pack/
+            #Copiamos README con manual de instalación
+            cp README.md MusicMatch-Full-Pack/
             # Comprimimos la carpeta
             zip -r MusicMatch-Project-${{ env.VERSION }}.zip MusicMatch-Full-Pack/
 
