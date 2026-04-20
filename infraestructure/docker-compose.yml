@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: musicmatch-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: musicmatch
+      MYSQL_USER: musicuser
+      MYSQL_PASSWORD: musicpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: musicmatch-backend
+    build: ../backend
+    container_name: musicmatch-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/musicmatch?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USER: musicuser
+      DB_PASS: musicpass
+
+volumes:
+  mysql_data:
