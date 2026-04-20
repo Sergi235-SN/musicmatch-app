@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - release
-      
+
 permissions:
   contents: write
 
@@ -87,18 +87,20 @@ jobs:
           path: mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
 
 
-  release:
+release:
     needs: [backend, android]
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v3
+
       - uses: actions/download-artifact@v4
         with:
           name: backend
 
       - uses: actions/download-artifact@v4
         with:
-          name: apk
+          name:
 
       - name: Create version
         run: echo "VERSION=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
@@ -112,3 +114,4 @@ jobs:
             backend-image.tar
             MusicMatch-oficial.apk
             infrastructure/docker-compose.yml
+            infrastructure/mysql/init.sql
