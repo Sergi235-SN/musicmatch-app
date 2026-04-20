@@ -87,42 +87,42 @@ jobs:
           path: mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
 
 
-release:
-    needs: [backend, android]
-    runs-on: ubuntu-latest
+  release:
+      needs: [backend, android]
+      runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
+      steps:
+        - uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend
-          path: .
+        - uses: actions/download-artifact@v4
+          with:
+            name: backend
+            path: .
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: apk
-          path: .
+        - uses: actions/download-artifact@v4
+          with:
+            name: apk
+            path: .
 
-      - name: Create version
-        run: echo "VERSION=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
+        - name: Create version
+          run: echo "VERSION=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Prepare and Zip Files
-        run: |
-          mkdir MusicMatch-Full-Pack
-          # Copiamos la imagen docker y el apk
-          mv backend-image.tar MusicMatch-Full-Pack/
-          mv MusicMatch-oficial.apk MusicMatch-Full-Pack/
-          # Copiamos la infraestructura (manteniendo la estructura de carpetas)
-          cp -r infrastructure MusicMatch-Full-Pack/
-          # Comprimimos la carpeta
-          zip -r MusicMatch-Project-${{ env.VERSION }}.zip MusicMatch-Full-Pack/
+        - name: Prepare and Zip Files
+          run: |
+            mkdir MusicMatch-Full-Pack
+            # Copiamos la imagen docker y el apk
+            mv backend-image.tar MusicMatch-Full-Pack/
+            mv MusicMatch-oficial.apk MusicMatch-Full-Pack/
+            # Copiamos la infraestructura (manteniendo la estructura de carpetas)
+            cp -r infrastructure MusicMatch-Full-Pack/
+            # Comprimimos la carpeta
+            zip -r MusicMatch-Project-${{ env.VERSION }}.zip MusicMatch-Full-Pack/
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.VERSION }}
-          name: Release ${{ env.VERSION }}
-          files: |
-            MusicMatch-Project-${{ env.VERSION }}.zip
-            
+        - name: Release
+          uses: softprops/action-gh-release@v1
+          with:
+            tag_name: ${{ env.VERSION }}
+            name: Release ${{ env.VERSION }}
+            files: |
+              MusicMatch-Project-${{ env.VERSION }}.zip
+              
