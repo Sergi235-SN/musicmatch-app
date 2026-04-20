@@ -71,14 +71,17 @@ jobs:
           cd mobile
           chmod +x gradlew
           ./gradlew assembleRelease
-          
+
       - name: List files for debugging
         run: find mobile -name "*.apk"
+
+      - name: Rename APK
+        run: mv mobile/app/build/outputs/apk/release/app-release-unsigned.apk mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: mobile/app/build/outputs/apk/release/app-release.apk
+          path: mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
 
 
   release:
@@ -104,5 +107,5 @@ jobs:
           name: Release ${{ env.VERSION }}
           files: |
             backend-image.tar
-            app-release.apk
+            MusicMatch-oficial.apk
             infrastructure/docker-compose.yml
