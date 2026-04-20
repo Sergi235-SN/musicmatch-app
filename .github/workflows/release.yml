@@ -125,3 +125,4 @@ release:
           name: Release ${{ env.VERSION }}
           files: |
             MusicMatch-Project-${{ env.VERSION }}.zip
+            
