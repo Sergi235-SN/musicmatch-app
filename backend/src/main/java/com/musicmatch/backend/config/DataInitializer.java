@@ -3,6 +3,7 @@ package com.musicmatch.backend.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.model.Instrument;
@@ -14,6 +15,7 @@ import com.musicmatch.backend.repository.StyleRepository;
 import java.util.Arrays;
 
 @Configuration
+@Profile("!test")
 public class DataInitializer {
 
     @Bean
