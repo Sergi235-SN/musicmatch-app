@@ -3,5 +3,8 @@ package com.musicmatch.mobile.model.dto
 data class LoginResponse(
     val id: Long,
     val username: String,
-    val token: String
+    val email: String,
+    val token: String?,
+    val refreshToken: String?,
+    val emailVerified: Boolean
 )

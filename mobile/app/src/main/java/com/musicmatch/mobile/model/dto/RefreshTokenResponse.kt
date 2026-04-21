@@ -1,4 +1,5 @@
 package com.musicmatch.mobile.model.dto
 
-class RefreshTokenResponse {
-}
+data class RefreshTokenResponse(
+    val token: String
+)

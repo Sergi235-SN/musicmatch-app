@@ -4,5 +4,7 @@ data class UserResponse(
     val id: Long,
     val username: String,
     val email: String,
-    val token: String
+    val token: String?,
+    val refreshToken: String?,
+    val emailVerified: Boolean
 )

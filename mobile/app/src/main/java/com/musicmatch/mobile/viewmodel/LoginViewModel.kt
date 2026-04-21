@@ -1,8 +1,6 @@
 package com.musicmatch.mobile.viewmodel
 
 import android.content.Context
-import android.util.Base64
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -12,7 +10,6 @@ import com.musicmatch.mobile.data.repository.UserRepository
 import com.musicmatch.mobile.model.dto.LoginRequest
 import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 class LoginViewModel : ViewModel() {
 
@@ -46,21 +43,28 @@ class LoginViewModel : ViewModel() {
                     LoginRequest(email.value, password.value)
                 )
 
-                if (response.success) {
+                if (response.success && response.data != null) {
+                    val username = response.data.username
+                    val accessToken = response.data.token
+                    val refreshToken = response.data.refreshToken
+                    val userId = response.data.id
 
-                    val username = response.data?.username ?: ""
-                    val token = response.data?.token ?: ""
-                    val userId = response.data?.id ?: 0L
+                    if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
+                        Toast.makeText(
+                            context,
+                            "No se pudo iniciar sesión. Revisa si has verificado tu correo.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@launch
+                    }
 
-                    tokenManager.saveToken(context, token)
+                    tokenManager.saveTokens(context, accessToken, refreshToken)
 
                     Toast.makeText(
                         context,
                         "Bienvenido $username",
                         Toast.LENGTH_SHORT
                     ).show()
-
-                    Log.d("DEBUG_LOGIN", "Token: $token")
 
                     onSuccess(userId)
 
@@ -80,13 +84,11 @@ class LoginViewModel : ViewModel() {
         onLoggedIn: (String) -> Unit,
         onNotLoggedIn: () -> Unit
     ) {
-        viewModelScope.launch {
-            validateToken(
-                context,
-                onValid = { username -> onLoggedIn(username) },
-                onInvalid = { onNotLoggedIn() }
-            )
-        }
+        validateToken(
+            context,
+            onValid = { username -> onLoggedIn(username) },
+            onInvalid = { onNotLoggedIn() }
+        )
     }
 
     fun validateToken(
@@ -94,29 +96,71 @@ class LoginViewModel : ViewModel() {
         onValid: (String) -> Unit,
         onInvalid: () -> Unit
     ) {
-        val token = tokenManager.getToken(context)
+        val accessToken = tokenManager.getAccessToken(context)
 
-        if (token.isNullOrEmpty()) {
+        if (accessToken.isNullOrEmpty()) {
             onInvalid()
             return
         }
 
         viewModelScope.launch {
             try {
-                val response = repository.getCurrentUser(token)
+                val username = getCurrentUsername(accessToken)
 
-                if (response.success && response.data != null) {
-                    onValid(response.data.username)
-                } else {
-                    tokenManager.clearToken(context)
-                    onInvalid()
+                if (username != null) {
+                    onValid(username)
+                    return@launch
                 }
 
+                val refreshed = refreshSession(context)
+                if (refreshed) {
+                    val newAccessToken = tokenManager.getAccessToken(context)
+                    val refreshedUsername = newAccessToken?.let { getCurrentUsername(it) }
+
+                    if (refreshedUsername != null) {
+                        onValid(refreshedUsername)
+                        return@launch
+                    }
+                }
+
+                tokenManager.clearTokens(context)
+                onInvalid()
+
             } catch (e: Exception) {
-                tokenManager.clearToken(context)
+                tokenManager.clearTokens(context)
                 onInvalid()
             }
         }
     }
 
+    private suspend fun getCurrentUsername(token: String): String? {
+        return try {
+            val response = repository.getCurrentUser(token)
+            if (response.success && response.data != null) {
+                response.data.username
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun refreshSession(context: Context): Boolean {
+        val refreshToken = tokenManager.getRefreshToken(context) ?: return false
+
+        return try {
+            val response = repository.refreshAccessToken(refreshToken)
+            val newAccessToken = response.data?.token
+
+            if (response.success && !newAccessToken.isNullOrBlank()) {
+                tokenManager.saveAccessToken(context, newAccessToken)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

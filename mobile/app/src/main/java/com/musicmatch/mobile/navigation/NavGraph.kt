@@ -1,5 +1,6 @@
 package com.musicmatch.mobile.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
@@ -14,6 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.musicmatch.mobile.ui.screens.*
 import com.musicmatch.mobile.viewmodel.*
 import com.musicmatch.mobile.ui.theme.ColorPrincipal
@@ -30,6 +32,16 @@ sealed class Screen(val route: String) {
     object Matches : Screen("matches")
     object Chat : Screen("chat")
     object Profile : Screen("profile")
+
+    object ForgotPassword : Screen("forgot_password")
+
+    object ResetPassword : Screen("reset_password?token={token}") {
+        fun createRoute(token: String) = "reset_password?token=$token"
+    }
+
+    object EmailVerification : Screen("email_verification?email={email}") {
+        fun createRoute(email: String) = "email_verification?email=${Uri.encode(email)}"
+    }
 
     object MusicalProfile : Screen("musical_profile/{userId}") {
         fun createRoute(userId: Long) = "musical_profile/$userId"
@@ -87,10 +99,12 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateLogin = {
                     navController.navigate(Screen.Login.route)
                 },
-                onNavigateToMusicalProfile = { userId ->
-                    navController.navigate(Screen.MusicalProfile.createRoute(userId)) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
-                    }
+                onRegisterSuccess = { email, password ->
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("pending_password", password)
+
+                    navController.navigate(Screen.EmailVerification.createRoute(email))
                 }
             )
         }
@@ -102,6 +116,9 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateRegister = {
                     navController.navigate(Screen.Register.route)
                 },
+                onNavigateForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
+                },
                 onLoginSuccess = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -110,23 +127,94 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        composable(
+            route = Screen.EmailVerification.route,
+            arguments = listOf(
+                navArgument("email") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email").orEmpty()
+
+            val password = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("pending_password")
+                .orEmpty()
+
+            EmailVerificationScreen(
+                email = email,
+                password = password,
+                onContinue = { userId ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.remove<String>("pending_password")
+
+                    navController.navigate(Screen.MusicalProfile.createRoute(userId)) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onGoToLogin = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.remove<String>("pending_password")
+
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.ResetPassword.route,
+            arguments = listOf(
+                navArgument("token") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = ""
+                }
+            ),
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "musicmatch://reset-password?token={token}"
+                }
+            )
+        ) { backStackEntry ->
+
+            val token = backStackEntry.arguments?.getString("token").orEmpty()
+
+            ResetPasswordScreen(
+                token = token,
+                onPasswordResetSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.Home.route) {
-
             MainScaffold(navController) {
-
                 HomeScreen(navController = navController)
             }
         }
 
         composable(Screen.Matches.route) {
-
             MainScaffold(navController) {
-
                 MatchesScreen(navController = navController)
             }
         }
 
-        composable("chat") {
+        composable(Screen.Chat.route) {
             MainScaffold(navController) {
                 ChatScreen(navController)
             }
@@ -176,10 +264,7 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = Screen.MusicalProfileStep2.route,
             arguments = listOf(navArgument("userId") { type = NavType.LongType })
-        ) { backStackEntry ->
-
-            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
-
+        ) {
             MusicalProfileStep2Screen(
                 onFinish = {
                     navController.navigate(Screen.Home.route) {
@@ -201,10 +286,8 @@ fun NavGraph(navController: NavHostController) {
                 navController = navController
             )
         }
-
     }
 }
-
 
 @Composable
 fun MainScaffold(

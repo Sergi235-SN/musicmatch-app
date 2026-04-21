@@ -4,26 +4,57 @@ import android.content.Context
 import androidx.core.content.edit
 
 class TokenManager {
-    // Guardar token en SharedPreferences
-    public fun saveToken(context: Context, token: String) {
+
+    fun saveTokens(context: Context, accessToken: String, refreshToken: String) {
+        val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
+        prefs.edit {
+            putString("jwt_token", accessToken)
+            putString("refresh_token", refreshToken)
+        }
+    }
+
+    fun saveAccessToken(context: Context, token: String) {
         val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
         prefs.edit { putString("jwt_token", token) }
     }
 
-    // Obtener token
-    public fun getToken(context: Context): String? {
+    fun saveRefreshToken(context: Context, refreshToken: String) {
+        val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
+        prefs.edit { putString("refresh_token", refreshToken) }
+    }
+
+    fun saveToken(context: Context, token: String) {
+        saveAccessToken(context, token)
+    }
+
+    fun getAccessToken(context: Context): String? {
         val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
         return prefs.getString("jwt_token", null)
     }
 
-    // Borrar token (cuando expira)
-    public fun clearToken(context: Context) {
+    fun getToken(context: Context): String? {
+        return getAccessToken(context)
+    }
+
+    fun getRefreshToken(context: Context): String? {
         val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
-        prefs.edit { remove("jwt_token") }
+        return prefs.getString("refresh_token", null)
+    }
+
+    fun clearTokens(context: Context) {
+        val prefs = context.getSharedPreferences("musicmatch_prefs", Context.MODE_PRIVATE)
+        prefs.edit {
+            remove("jwt_token")
+            remove("refresh_token")
+        }
+    }
+
+    fun clearToken(context: Context) {
+        clearTokens(context)
     }
 
     fun getUserIdFromToken(context: Context): Long? {
-        val token = getToken(context) ?: return null
+        val token = getAccessToken(context) ?: return null
         val parts = token.split(".")
         if (parts.size < 2) return null
 

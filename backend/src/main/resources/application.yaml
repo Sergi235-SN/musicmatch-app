@@ -16,6 +16,33 @@ spring:
   hikari:
     initializationFailTimeout: 60000
 
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_SMTP_STARTTLS:true}
+          connectiontimeout: ${SPRING_MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${SPRING_MAIL_TIMEOUT:3000}
+          writetimeout: ${SPRING_MAIL_WRITE_TIMEOUT:5000}
+
 server:
   port: 8080
   address: 0.0.0.0
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+app:
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@musicmatch.com}
+  auth:
+    verify-email-url-base: ${APP_VERIFY_EMAIL_URL_BASE:http://localhost:8080/api/auth/verify-email?token=}
+    reset-password-url-base: ${APP_RESET_PASSWORD_URL_BASE:musicmatch://reset-password?token=}

@@ -1,4 +1,5 @@
 package com.musicmatch.mobile.model.dto
 
-class RefreshTokenRequest {
-}
+data class RefreshTokenRequest(
+    val refreshToken: String
+)

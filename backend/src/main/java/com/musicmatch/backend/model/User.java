@@ -29,4 +29,17 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Profile profile;
+
+
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
+    private String emailVerificationToken;
+    private LocalDateTime emailVerificationExpiry;
+
+    private String resetPasswordToken;
+    private LocalDateTime resetPasswordExpiry;
+
+    private int tokenVersion = 0;
+
 }

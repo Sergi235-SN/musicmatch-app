@@ -7,25 +7,35 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.musicmatch.mobile.data.ApiService
 import com.musicmatch.mobile.data.repository.UserRepository
-import com.musicmatch.mobile.model.dto.RegisterRequest
 import com.musicmatch.mobile.model.User
-import com.musicmatch.mobile.utils.TokenManager
+import com.musicmatch.mobile.model.dto.RegisterRequest
 import kotlinx.coroutines.launch
 
 class RegisterViewModel : ViewModel() {
 
-    private val tokenManager = TokenManager()
     private val repository = UserRepository(ApiService.create())
 
     var user = mutableStateOf(User())
         private set
 
-    fun onUsernameChange(newUsername: String) = run { user.value = user.value.copy(username = newUsername) }
-    fun onEmailChange(newEmail: String) = run { user.value = user.value.copy(email = newEmail) }
-    fun onPasswordChange(newPassword: String) = run { user.value = user.value.copy(password = newPassword) }
+    fun onUsernameChange(newUsername: String) = run {
+        user.value = user.value.copy(username = newUsername)
+    }
 
-    fun onRegisterClicked(context: Context, onSuccess: (Long) -> Unit) {
+    fun onEmailChange(newEmail: String) = run {
+        user.value = user.value.copy(email = newEmail)
+    }
+
+    fun onPasswordChange(newPassword: String) = run {
+        user.value = user.value.copy(password = newPassword)
+    }
+
+    fun onRegisterClicked(
+        context: Context,
+        onSuccess: (String, String) -> Unit
+    ) {
         val currentUser = user.value
+
         if (currentUser.username.isBlank() || currentUser.email.isBlank() || currentUser.password.isBlank()) {
             Toast.makeText(context, "Campos obligatorios", Toast.LENGTH_SHORT).show()
             return
@@ -38,10 +48,8 @@ class RegisterViewModel : ViewModel() {
                 )
 
                 if (response.success && response.data != null) {
-                    tokenManager.saveToken(context, response.data.token ?: "")
-
-                    val userId = response.data.id ?: 0L
-                    onSuccess(userId)
+                    Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
+                    onSuccess(currentUser.email, currentUser.password)
                 } else {
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }

@@ -6,6 +6,7 @@ import com.musicmatch.mobile.model.dto.BlockRequest
 import com.musicmatch.mobile.model.dto.ChatPreview
 import com.musicmatch.mobile.model.dto.ChatRequest
 import com.musicmatch.mobile.model.dto.ChatResponse
+import com.musicmatch.mobile.model.dto.EmailRequest
 import com.musicmatch.mobile.model.dto.LoginRequest
 import com.musicmatch.mobile.model.dto.LoginResponse
 import com.musicmatch.mobile.model.dto.MatchCandidatesResponse
@@ -15,25 +16,30 @@ import com.musicmatch.mobile.model.dto.MusicalOptionsResponse
 import com.musicmatch.mobile.model.dto.ProfileSearchCardDTO
 import com.musicmatch.mobile.model.dto.ProfileSearchRequest
 import com.musicmatch.mobile.model.dto.PublicProfileResponse
+import com.musicmatch.mobile.model.dto.RefreshTokenRequest
+import com.musicmatch.mobile.model.dto.RefreshTokenResponse
 import com.musicmatch.mobile.model.dto.RegisterRequest
+import com.musicmatch.mobile.model.dto.ResetPasswordRequest
 import com.musicmatch.mobile.model.dto.SwipeRequest
 import com.musicmatch.mobile.model.dto.SwipeResponse
 import com.musicmatch.mobile.model.dto.UpdateProfileRequest
 import com.musicmatch.mobile.model.dto.UserProfileResponse
 import com.musicmatch.mobile.model.dto.UserResponse
+import com.musicmatch.mobile.model.dto.VerificationStatusResponse
 import com.musicmatch.mobile.utils.NetworkConfig
 import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.POST
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -42,6 +48,18 @@ interface ApiService {
 
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): ApiResponse<LoginResponse>
+
+    @POST("api/auth/refresh")
+    suspend fun refresh(@Body request: RefreshTokenRequest): ApiResponse<RefreshTokenResponse>
+
+    @POST("api/auth/resend-verification")
+    suspend fun resendVerification(@Body request: EmailRequest): ApiResponse<Any?>
+
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: EmailRequest): ApiResponse<Any?>
+
+    @POST("api/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): ApiResponse<Any?>
 
     @GET("api/auth/me")
     suspend fun getCurrentUser(
@@ -145,6 +163,11 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: ProfileSearchRequest
     ): List<ProfileSearchCardDTO>
+
+    @GET("api/auth/verification-status")
+    suspend fun getVerificationStatus(
+        @Query("email") email: String
+    ): ApiResponse<VerificationStatusResponse>
 
     companion object {
         fun create(): ApiService {

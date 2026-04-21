@@ -13,6 +13,18 @@ class UserRepository(private val api: ApiService) {
     suspend fun loginUser(request: LoginRequest) =
         api.login(request)
 
+    suspend fun refreshAccessToken(refreshToken: String) =
+        api.refresh(RefreshTokenRequest(refreshToken))
+
+    suspend fun resendVerification(email: String) =
+        api.resendVerification(EmailRequest(email))
+
+    suspend fun forgotPassword(email: String) =
+        api.forgotPassword(EmailRequest(email))
+
+    suspend fun resetPassword(token: String, password: String) =
+        api.resetPassword(ResetPasswordRequest(token, password))
+
     suspend fun getMusicalOptions(token: String) =
         api.getMusicalOptions("Bearer $token")
 
@@ -40,4 +52,8 @@ class UserRepository(private val api: ApiService) {
 
     suspend fun getPublicProfile(userId: Long, token: String) =
         api.getPublicProfile(userId, "Bearer $token")
+
+    suspend fun getVerificationStatus(email: String) =
+        api.getVerificationStatus(email)
+
 }

@@ -13,18 +13,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.musicmatch.mobile.ui.components.CustomLabelledTextField
 import com.musicmatch.mobile.ui.components.PasswordLabelledTextField
-import com.musicmatch.mobile.viewmodel.RegisterViewModel
 import com.musicmatch.mobile.ui.theme.ColorFondo
 import com.musicmatch.mobile.ui.theme.ColorPrincipal
 import com.musicmatch.mobile.ui.theme.ColorSecundario
+import com.musicmatch.mobile.viewmodel.RegisterViewModel
+
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel, 
+    viewModel: RegisterViewModel,
     onNavigateLogin: () -> Unit = {},
-    onNavigateToMusicalProfile: (Long) -> Unit 
+    onRegisterSuccess: (String, String) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val user = viewModel.user.value
@@ -90,6 +90,7 @@ fun RegisterScreen(
                 )
 
                 Spacer(modifier = Modifier.height(30.dp))
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -97,8 +98,8 @@ fun RegisterScreen(
                 ) {
                     Button(
                         onClick = {
-                            viewModel.onRegisterClicked(context) { userId ->
-                                onNavigateToMusicalProfile(userId)
+                            viewModel.onRegisterClicked(context) { email, password ->
+                                onRegisterSuccess(email, password)
                             }
                         },
                         modifier = Modifier
@@ -115,7 +116,7 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "¿Ya tienes una cuenta?, Inicia sesión",
+                            text = "¿Ya tienes una cuenta? Inicia sesión",
                             color = ColorPrincipal,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold

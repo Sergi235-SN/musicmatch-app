@@ -26,7 +26,8 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onNavigateRegister: () -> Unit = {},
-    onLoginSuccess: (Long) -> Unit = {} 
+    onNavigateForgotPassword: () -> Unit = {},
+    onLoginSuccess: (Long) -> Unit = {}
 ) {
 
     val email = viewModel.email.value
@@ -116,6 +117,14 @@ fun LoginScreen(
                     TextButton(onClick = onNavigateRegister) {
                         Text(
                             text = "¿No tienes cuenta? Regístrate",
+                            color = ColorPrincipal,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    TextButton(onClick = onNavigateForgotPassword) {
+                        Text(
+                            text = "He olvidado mi contraseña",
                             color = ColorPrincipal,
                             fontWeight = FontWeight.SemiBold
                         )

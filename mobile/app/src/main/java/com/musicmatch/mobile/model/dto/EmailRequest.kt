@@ -1,4 +1,5 @@
 package com.musicmatch.mobile.model.dto
 
-class EmailRequest {
-}
+data class EmailRequest(
+    val email: String
+)

@@ -1,30 +1,56 @@
 package com.musicmatch.backend.utils;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private final Key SIGNING_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Value("${jwt.secret}")
+    private String secret;
 
-    private final long EXPIRATION_MS = 1000 * 60 * 60 * 10; 
+    @Value("${jwt.access-expiration}")
+    private long accessExpirationMs;
+
+    @Value("${jwt.refresh-expiration}")
+    private long refreshExpirationMs;
 
     private Key getSigningKey() {
-        return SIGNING_KEY;
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Long userId, String username) {
-        return Jwts.builder()
+    private String generateToken(Long userId, String username, String type, long expirationMs) {
+        var builder = Jwts.builder()
                 .setSubject(String.valueOf(userId))
-                .claim("username", username)
+                .claim("type", type)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs));
+
+        if (username != null) {
+            builder.claim("username", username);
+        }
+
+        return builder
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String generateAccessToken(Long userId, String username) {
+        return generateToken(userId, username, "access", accessExpirationMs);
+    }
+
+    public String generateRefreshToken(Long userId) {
+        return generateToken(userId, null, "refresh", refreshExpirationMs);
     }
 
     public Claims extractClaims(String token) throws ExpiredJwtException {
@@ -43,6 +69,24 @@ public class JwtUtil {
         try {
             extractClaims(token);
             return true;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            return "refresh".equals(claims.get("type"));
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            return "access".equals(claims.get("type"));
         } catch (JwtException e) {
             return false;
         }
