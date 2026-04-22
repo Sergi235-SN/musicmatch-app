@@ -1,11 +1,16 @@
 package com.musicmatch.backend.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import com.musicmatch.backend.dto.VerificationStatusResponse;
-
-import lombok.RequiredArgsConstructor;
 
 import com.musicmatch.backend.dto.ApiResponse;
 import com.musicmatch.backend.dto.EmailRequest;
@@ -16,19 +21,21 @@ import com.musicmatch.backend.dto.RefreshTokenResponse;
 import com.musicmatch.backend.dto.RegisterRequest;
 import com.musicmatch.backend.dto.ResetPasswordRequest;
 import com.musicmatch.backend.dto.UserResponse;
+import com.musicmatch.backend.dto.VerificationState;
+import com.musicmatch.backend.dto.VerificationStatusResponse;
 import com.musicmatch.backend.model.EmailVerificationToken;
 import com.musicmatch.backend.model.PasswordResetToken;
+import com.musicmatch.backend.model.PendingRegistration;
 import com.musicmatch.backend.model.Profile;
 import com.musicmatch.backend.model.User;
 import com.musicmatch.backend.repository.EmailVerificationTokenRepository;
 import com.musicmatch.backend.repository.PasswordResetTokenRepository;
+import com.musicmatch.backend.repository.PendingRegistrationRepository;
 import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.UserRepository;
 import com.musicmatch.backend.utils.JwtUtil;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -40,13 +47,14 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PendingRegistrationRepository pendingRegistrationRepository;
     private final EmailService emailService;
 
     private static final Pattern EMAIL_PATTERN =
-        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+            Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
 
     private static final Pattern PASSWORD_PATTERN =
-        Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
+            Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
 
     private static final int VERIFICATION_TOKEN_HOURS = 24;
     private static final int RESET_TOKEN_MINUTES = 60;
@@ -54,80 +62,126 @@ public class UserService {
     @Transactional
     public ApiResponse<UserResponse> register(RegisterRequest request) {
 
-        if (request.getUsername() == null || request.getUsername().trim().length() < 3) {
+        String username = normalizeUsername(request != null ? request.getUsername() : null);
+        String email = normalizeEmail(request != null ? request.getEmail() : null);
+        String password = request != null ? request.getPassword() : null;
+
+        if (username.length() < 3) {
             return new ApiResponse<>(false,
                     "El nombre de usuario debe tener al menos 3 caracteres",
                     null);
         }
 
-        if (request.getUsername().contains(" ")) {
+        if (username.contains(" ")) {
             return new ApiResponse<>(false,
                     "El nombre de usuario no puede contener espacios",
                     null);
         }
 
-        if (request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             return new ApiResponse<>(false,
                     "El formato del email no es válido",
                     null);
         }
 
-        if (request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+        if (password == null || !PASSWORD_PATTERN.matcher(password).matches()) {
             return new ApiResponse<>(false,
                     "La contraseña no cumple el mínimo de seguridad",
                     null);
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return new ApiResponse<>(false, "El email ya está registrado", null);
+        User existingUserByEmail = userRepository.findByEmail(email).orElse(null);
+        if (existingUserByEmail != null) {
+            if (existingUserByEmail.isEmailVerified()) {
+                return new ApiResponse<>(false, "El email ya está registrado", null);
+            }
+
+            createAndSendVerificationToken(existingUserByEmail);
+
+            UserResponse response = new UserResponse(
+                    existingUserByEmail.getId(),
+                    existingUserByEmail.getUsername(),
+                    existingUserByEmail.getEmail(),
+                    null,
+                    null,
+                    false
+            );
+
+            return new ApiResponse<>(
+                    true,
+                    "Ya existía una cuenta pendiente de verificación. Te hemos enviado un nuevo correo.",
+                    response
+            );
         }
 
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        User existingUserByUsername = userRepository.findByUsername(username).orElse(null);
+        if (existingUserByUsername != null) {
             return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
         }
 
-        User user = new User();
-        user.setUsername(request.getUsername().trim());
-        user.setEmail(request.getEmail().trim().toLowerCase());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmailVerified(false);
+        PendingRegistration pendingByUsername = pendingRegistrationRepository.findByUsername(username).orElse(null);
+        if (pendingByUsername != null && pendingByUsername.getUsedAt() == null && !isExpired(pendingByUsername)) {
+            if (!pendingByUsername.getEmail().equals(email)) {
+                return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
+            }
+        }
 
-        User saved = userRepository.save(user);
+        PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
 
-        Profile profile = new Profile();
-        profile.setUser(saved);
-        profileRepository.save(profile);
+        if (pending == null) {
+            pending = new PendingRegistration();
+            pending.setCreatedAt(LocalDateTime.now());
+        }
 
-        createAndSendVerificationToken(saved);
+        pending.setUsername(username);
+        pending.setEmail(email);
+        pending.setPasswordHash(passwordEncoder.encode(password));
+        pending.setUsedAt(null);
+
+        createAndSendPendingRegistrationToken(pending);
 
         UserResponse response = new UserResponse(
-            saved.getId(),
-            saved.getUsername(),
-            saved.getEmail(),
-            null,
-            null,
-            false
+                null,
+                username,
+                email,
+                null,
+                null,
+                false
         );
 
         return new ApiResponse<>(
-            true,
-            "Usuario registrado correctamente. Te hemos enviado un correo para verificar tu cuenta.",
-            response
+                true,
+                "Solicitud registrada correctamente. Te hemos enviado un correo para verificar tu cuenta.",
+                response
         );
     }
 
     public ApiResponse<LoginResponse> login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        String email = normalizeEmail(request != null ? request.getEmail() : null);
+        String password = request != null ? request.getPassword() : null;
+
+        User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
+            PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
+
+            if (pending != null && pending.getUsedAt() == null) {
+                if (isExpired(pending)) {
+                    return new ApiResponse<>(false,
+                            "Tu solicitud de verificación ha expirado. Solicita un nuevo correo de verificación.",
+                            null);
+                }
+
+                return new ApiResponse<>(false,
+                        "Debes verificar tu correo antes de iniciar sesión",
+                        null);
+            }
+
             return new ApiResponse<>(false, "Usuario no encontrado", null);
         }
 
-        boolean matches = passwordEncoder.matches(
-                request.getPassword(),
-                user.getPassword()
-        );
+        boolean matches = passwordEncoder.matches(password, user.getPassword());
 
         if (!matches) {
             return new ApiResponse<>(false, "Credenciales inválidas", null);
@@ -187,67 +241,67 @@ public class UserService {
             return new ApiResponse<>(false, "Token de verificación requerido", null);
         }
 
-        EmailVerificationToken verificationToken =
-                emailVerificationTokenRepository.findByToken(token).orElse(null);
-
-        if (verificationToken == null) {
-            return new ApiResponse<>(false, "Token de verificación inválido", null);
+        ApiResponse<Void> pendingVerificationResult = verifyPendingRegistrationToken(token);
+        if (pendingVerificationResult != null) {
+            return pendingVerificationResult;
         }
 
-        if (verificationToken.getUsedAt() != null) {
-            return new ApiResponse<>(false, "Este enlace de verificación ya fue utilizado", null);
-        }
-
-        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new ApiResponse<>(false, "El enlace de verificación ha expirado", null);
-        }
-
-        User user = verificationToken.getUser();
-        user.setEmailVerified(true);
-        userRepository.save(user);
-
-        verificationToken.setUsedAt(LocalDateTime.now());
-        emailVerificationTokenRepository.save(verificationToken);
-
-        return new ApiResponse<>(true, "Correo verificado correctamente", null);
+        return verifyLegacyEmailToken(token);
     }
 
     @Transactional
     public ApiResponse<Void> resendVerification(EmailRequest request) {
-        if (request == null || request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
+        String email = normalizeEmail(request != null ? request.getEmail() : null);
+
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             return new ApiResponse<>(false, "El formato del email no es válido", null);
         }
 
-        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase()).orElse(null);
+        User user = userRepository.findByEmail(email).orElse(null);
 
-        if (user == null) {
-            return new ApiResponse<>(true, "Si el correo existe, te hemos enviado un nuevo email de verificación", null);
+        if (user != null) {
+            if (user.isEmailVerified()) {
+                return new ApiResponse<>(true, "Tu correo ya está verificado", null);
+            }
+
+            createAndSendVerificationToken(user);
+            return new ApiResponse<>(true, "Te hemos enviado un nuevo correo de verificación", null);
         }
 
-        if (user.isEmailVerified()) {
-            return new ApiResponse<>(true, "Tu correo ya está verificado", null);
+        PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
+
+        if (pending == null || pending.getUsedAt() != null) {
+            return new ApiResponse<>(true,
+                    "Si el correo existe, te hemos enviado un nuevo email de verificación",
+                    null);
         }
 
-        createAndSendVerificationToken(user);
+        createAndSendPendingRegistrationToken(pending);
 
         return new ApiResponse<>(true, "Te hemos enviado un nuevo correo de verificación", null);
     }
 
     @Transactional
     public ApiResponse<Void> forgotPassword(EmailRequest request) {
-        if (request == null || request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
+        String email = normalizeEmail(request != null ? request.getEmail() : null);
+
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             return new ApiResponse<>(false, "El formato del email no es válido", null);
         }
 
-        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase()).orElse(null);
+        User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            return new ApiResponse<>(true, "Si el correo existe, te hemos enviado instrucciones para recuperar la contraseña", null);
+            return new ApiResponse<>(true,
+                    "Si el correo existe, te hemos enviado instrucciones para recuperar la contraseña",
+                    null);
         }
 
         createAndSendPasswordResetToken(user);
 
-        return new ApiResponse<>(true, "Si el correo existe, te hemos enviado instrucciones para recuperar la contraseña", null);
+        return new ApiResponse<>(true,
+                "Si el correo existe, te hemos enviado instrucciones para recuperar la contraseña",
+                null);
     }
 
     @Transactional
@@ -283,6 +337,133 @@ public class UserService {
         return new ApiResponse<>(true, "Contraseña actualizada correctamente", null);
     }
 
+    public ApiResponse<VerificationStatusResponse> getVerificationStatus(String email) {
+        String normalizedEmail = normalizeEmail(email);
+
+        if (normalizedEmail.isBlank()) {
+            return new ApiResponse<>(false, "Email requerido", null);
+        }
+
+        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
+
+        if (user != null) {
+            VerificationStatusResponse data = new VerificationStatusResponse(
+                    user.getId(),
+                    user.getEmail(),
+                    user.isEmailVerified(),
+                    user.isEmailVerified() ? VerificationState.VERIFIED : VerificationState.PENDING
+            );
+
+            return new ApiResponse<>(true, "Estado de verificación obtenido", data);
+        }
+
+        PendingRegistration pending = pendingRegistrationRepository.findByEmail(normalizedEmail).orElse(null);
+
+        if (pending != null && pending.getUsedAt() == null) {
+            VerificationStatusResponse data = new VerificationStatusResponse(
+                    null,
+                    pending.getEmail(),
+                    false,
+                    isExpired(pending) ? VerificationState.EXPIRED : VerificationState.PENDING
+            );
+
+            return new ApiResponse<>(true, "Estado de verificación obtenido", data);
+        }
+
+        VerificationStatusResponse data = new VerificationStatusResponse(
+                null,
+                normalizedEmail,
+                false,
+                VerificationState.NOT_FOUND
+        );
+
+        return new ApiResponse<>(true, "Estado de verificación obtenido", data);
+    }
+
+    private ApiResponse<Void> verifyPendingRegistrationToken(String token) {
+        String tokenHash = hashToken(token);
+
+        PendingRegistration pending = pendingRegistrationRepository.findByTokenHash(tokenHash).orElse(null);
+
+        if (pending == null) {
+            return null;
+        }
+
+        if (pending.getUsedAt() != null) {
+            return new ApiResponse<>(false, "Este enlace de verificación ya fue utilizado", null);
+        }
+
+        if (isExpired(pending)) {
+            return new ApiResponse<>(false, "El enlace de verificación ha expirado", null);
+        }
+
+        if (userRepository.findByEmail(pending.getEmail()).isPresent()) {
+            return new ApiResponse<>(false, "Ese correo ya fue verificado previamente", null);
+        }
+
+        if (userRepository.findByUsername(pending.getUsername()).isPresent()) {
+            return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
+        }
+
+        User user = new User();
+        user.setUsername(pending.getUsername());
+        user.setEmail(pending.getEmail());
+        user.setPassword(pending.getPasswordHash());
+        user.setEmailVerified(true);
+
+        User saved = userRepository.save(user);
+
+        Profile profile = new Profile();
+        profile.setUser(saved);
+        profileRepository.save(profile);
+
+        pending.setUsedAt(LocalDateTime.now());
+        pendingRegistrationRepository.save(pending);
+
+        return new ApiResponse<>(true, "Correo verificado correctamente", null);
+    }
+
+    private ApiResponse<Void> verifyLegacyEmailToken(String token) {
+        EmailVerificationToken verificationToken =
+                emailVerificationTokenRepository.findByToken(token).orElse(null);
+
+        if (verificationToken == null) {
+            return new ApiResponse<>(false, "Token de verificación inválido", null);
+        }
+
+        if (verificationToken.getUsedAt() != null) {
+            return new ApiResponse<>(false, "Este enlace de verificación ya fue utilizado", null);
+        }
+
+        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return new ApiResponse<>(false, "El enlace de verificación ha expirado", null);
+        }
+
+        User user = verificationToken.getUser();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        verificationToken.setUsedAt(LocalDateTime.now());
+        emailVerificationTokenRepository.save(verificationToken);
+
+        return new ApiResponse<>(true, "Correo verificado correctamente", null);
+    }
+
+    private void createAndSendPendingRegistrationToken(PendingRegistration pending) {
+        String rawToken = UUID.randomUUID().toString();
+
+        pending.setTokenHash(hashToken(rawToken));
+        pending.setExpiresAt(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS));
+
+        pendingRegistrationRepository.save(pending);
+
+        emailService.sendVerificationEmail(
+                pending.getEmail(),
+                pending.getUsername(),
+                rawToken
+        );
+    }
+
     private void createAndSendVerificationToken(User user) {
         emailVerificationTokenRepository.deleteAllByUser_Id(user.getId());
 
@@ -315,23 +496,25 @@ public class UserService {
         emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), token);
     }
 
-    public ApiResponse<VerificationStatusResponse> getVerificationStatus(String email) {
-        if (email == null || email.isBlank()) {
-            return new ApiResponse<>(false, "Email requerido", null);
+    private boolean isExpired(PendingRegistration pending) {
+        return pending.getExpiresAt() == null || pending.getExpiresAt().isBefore(LocalDateTime.now());
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private String normalizeUsername(String username) {
+        return username == null ? "" : username.trim();
+    }
+
+    private String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("No se pudo generar el hash del token", e);
         }
-
-        User user = userRepository.findByEmail(email.trim().toLowerCase()).orElse(null);
-
-        if (user == null) {
-            return new ApiResponse<>(false, "Usuario no encontrado", null);
-        }
-
-        VerificationStatusResponse data = new VerificationStatusResponse(
-                user.getId(),
-                user.getEmail(),
-                user.isEmailVerified()
-        );
-
-        return new ApiResponse<>(true, "Estado de verificación obtenido", data);
     }
 }

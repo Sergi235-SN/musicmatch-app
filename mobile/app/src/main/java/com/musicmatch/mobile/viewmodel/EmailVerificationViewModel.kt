@@ -49,71 +49,107 @@ class EmailVerificationViewModel : ViewModel() {
         )
 
         pollingJob = viewModelScope.launch {
-            while (isActive && !uiState.value.isSuccess) {
+            var shouldContinuePolling = true
+
+            while (isActive && shouldContinuePolling && !uiState.value.isSuccess) {
                 try {
                     val verificationResponse = repository.getVerificationStatus(email)
 
                     if (verificationResponse.success && verificationResponse.data != null) {
-                        val verified = verificationResponse.data.emailVerified
+                        when (verificationResponse.data.state) {
+                            "VERIFIED" -> {
+                                uiState.value = uiState.value.copy(
+                                    isChecking = false,
+                                    isVerified = true,
+                                    isLoggingIn = true,
+                                    errorMessage = null
+                                )
 
-                        if (verified) {
-                            uiState.value = uiState.value.copy(
-                                isChecking = false,
-                                isVerified = true,
-                                isLoggingIn = true,
-                                errorMessage = null
-                            )
+                                val loginResponse = repository.loginUser(
+                                    LoginRequest(email, password)
+                                )
 
-                            val loginResponse = repository.loginUser(
-                                LoginRequest(email, password)
-                            )
+                                if (loginResponse.success && loginResponse.data != null) {
+                                    val accessToken = loginResponse.data.token
+                                    val refreshToken = loginResponse.data.refreshToken
+                                    val userId = loginResponse.data.id
 
-                            if (loginResponse.success && loginResponse.data != null) {
-                                val accessToken = loginResponse.data.token
-                                val refreshToken = loginResponse.data.refreshToken
-                                val userId = loginResponse.data.id
+                                    if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
+                                        tokenManager.saveTokens(context, accessToken, refreshToken)
 
-                                if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
-                                    tokenManager.saveTokens(context, accessToken, refreshToken)
-
-                                    uiState.value = uiState.value.copy(
-                                        isChecking = false,
-                                        isVerified = true,
-                                        isLoggingIn = false,
-                                        isSuccess = true,
-                                        userId = userId,
-                                        errorMessage = null
-                                    )
-                                    break
+                                        uiState.value = uiState.value.copy(
+                                            isChecking = false,
+                                            isVerified = true,
+                                            isLoggingIn = false,
+                                            isSuccess = true,
+                                            userId = userId,
+                                            errorMessage = null
+                                        )
+                                        shouldContinuePolling = false
+                                    } else {
+                                        uiState.value = uiState.value.copy(
+                                            isChecking = false,
+                                            isVerified = true,
+                                            isLoggingIn = false,
+                                            isSuccess = false,
+                                            errorMessage = "No se pudo iniciar sesión automáticamente"
+                                        )
+                                        shouldContinuePolling = false
+                                    }
                                 } else {
                                     uiState.value = uiState.value.copy(
                                         isChecking = false,
                                         isVerified = true,
                                         isLoggingIn = false,
                                         isSuccess = false,
-                                        errorMessage = "No se pudo iniciar sesión automáticamente"
+                                        errorMessage = loginResponse.message
                                     )
+                                    shouldContinuePolling = false
                                 }
-                            } else {
+                            }
+
+                            "PENDING" -> {
                                 uiState.value = uiState.value.copy(
                                     isChecking = false,
-                                    isVerified = true,
+                                    isVerified = false,
                                     isLoggingIn = false,
-                                    isSuccess = false,
-                                    errorMessage = loginResponse.message
+                                    errorMessage = null
                                 )
                             }
-                        } else {
-                            uiState.value = uiState.value.copy(
-                                isChecking = false,
-                                isVerified = false,
-                                isLoggingIn = false,
-                                errorMessage = null
-                            )
+
+                            "EXPIRED" -> {
+                                uiState.value = uiState.value.copy(
+                                    isChecking = false,
+                                    isVerified = false,
+                                    isLoggingIn = false,
+                                    errorMessage = "El enlace de verificación ha expirado. Solicita uno nuevo."
+                                )
+                                shouldContinuePolling = false
+                            }
+
+                            "NOT_FOUND" -> {
+                                uiState.value = uiState.value.copy(
+                                    isChecking = false,
+                                    isVerified = false,
+                                    isLoggingIn = false,
+                                    errorMessage = "No existe ninguna solicitud de verificación para ese correo."
+                                )
+                                shouldContinuePolling = false
+                            }
+
+                            else -> {
+                                uiState.value = uiState.value.copy(
+                                    isChecking = false,
+                                    isVerified = false,
+                                    isLoggingIn = false,
+                                    errorMessage = "No se pudo comprobar la verificación"
+                                )
+                            }
                         }
                     } else {
                         uiState.value = uiState.value.copy(
                             isChecking = false,
+                            isLoggingIn = false,
                             errorMessage = verificationResponse.message
                         )
                     }
@@ -125,8 +161,12 @@ class EmailVerificationViewModel : ViewModel() {
                     )
                 }
 
-                delay(3000)
+                if (shouldContinuePolling && !uiState.value.isSuccess) {
+                    delay(3000)
+                }
             }
+
+            pollingJob = null
         }
     }
 

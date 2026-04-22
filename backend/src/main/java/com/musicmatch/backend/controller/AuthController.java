@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 import com.musicmatch.backend.dto.ApiResponse;
 import com.musicmatch.backend.dto.EmailRequest;
@@ -287,7 +288,9 @@ public class AuthController {
     }
 
     private String buildErrorHtml(String message) {
-        String safeMessage = message != null ? message : "Ha ocurrido un error inesperado";
+        String safeMessage = escapeHtml(
+                message != null ? message : "Ha ocurrido un error inesperado"
+        );
 
         return """
                 <!DOCTYPE html>
@@ -400,12 +403,13 @@ public class AuthController {
     }
 
     private String buildResetPasswordPageHtml(String token, String errorMessage) {
-        String safeToken = token == null ? "" : token;
+        String safeToken = escapeHtml(token == null ? "" : token);
         String errorBlock = "";
+
         if (errorMessage != null && !errorMessage.isBlank()) {
             errorBlock = """
                     <div class="error-box">%s</div>
-                    """.formatted(errorMessage);
+                    """.formatted(escapeHtml(errorMessage));
         }
 
         return """
@@ -684,5 +688,9 @@ public class AuthController {
                 </body>
                 </html>
                 """;
+    }
+
+    private String escapeHtml(String value) {
+        return HtmlUtils.htmlEscape(value == null ? "" : value);
     }
 }
