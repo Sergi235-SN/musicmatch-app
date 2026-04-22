@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=USER
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -10,6 +10,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.mail.autoconfigure.MailSenderAutoConfiguration
 
 mail:
   enabled: false
