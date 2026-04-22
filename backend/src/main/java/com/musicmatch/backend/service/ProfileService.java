@@ -1,8 +1,14 @@
 package com.musicmatch.backend.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +20,8 @@ import com.musicmatch.backend.dto.MusicalOptionDTO;
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
 import com.musicmatch.backend.dto.PublicProfileResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
+import com.musicmatch.backend.exception.BadRequestException;
+import com.musicmatch.backend.exception.ResourceNotFoundException;
 import com.musicmatch.backend.model.City;
 import com.musicmatch.backend.model.Instrument;
 import com.musicmatch.backend.model.Profile;
@@ -27,12 +35,6 @@ import com.musicmatch.backend.repository.ProfileInstrumentRepository;
 import com.musicmatch.backend.repository.ProfileRepository;
 import com.musicmatch.backend.repository.StyleRepository;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -51,15 +53,15 @@ public class ProfileService {
     public void updateProfilePartial(Long userId, UpdateProfileRequest request) {
 
         Profile profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil no encontrado"));
 
         if (request.getBiography() != null) {
-            profile.setBiography(request.getBiography());
+            profile.setBiography(request.getBiography().trim());
         }
 
         if (request.getCityId() != null) {
             City city = cityRepository.findById(request.getCityId())
-                    .orElseThrow(() -> new RuntimeException("Ciudad no encontrada"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada"));
             profile.setCity(city);
         }
 
@@ -75,7 +77,7 @@ public class ProfileService {
                 List<Style> foundStyles = styleRepository.findAllById(request.getStyleIds());
 
                 if (foundStyles.size() != request.getStyleIds().size()) {
-                    throw new RuntimeException("Algunos estilos no existen");
+                    throw new BadRequestException("Algunos estilos no existen");
                 }
 
                 profile.setStyles(new HashSet<>(foundStyles));
@@ -94,7 +96,7 @@ public class ProfileService {
 
                     Instrument instrument = instrumentRepository
                             .findById(instrumentRequest.getInstrumentId())
-                            .orElseThrow(() -> new RuntimeException("Instrumento no encontrado"));
+                            .orElseThrow(() -> new ResourceNotFoundException("Instrumento no encontrado"));
 
                     ProfileInstrument pi = new ProfileInstrument();
                     pi.setProfile(profile);
@@ -128,12 +130,12 @@ public class ProfileService {
 
     public String saveProfileImage(Long userId, MultipartFile file) throws IOException {
 
-        if (file.isEmpty()) {
-            throw new RuntimeException("Archivo vacío");
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("Archivo vacío");
         }
 
         if (file.getSize() > 5_000_000) {
-            throw new RuntimeException("Archivo demasiado grande");
+            throw new BadRequestException("Archivo demasiado grande");
         }
 
         String contentType = file.getContentType();
@@ -151,11 +153,11 @@ public class ProfileService {
                 || filename.toLowerCase().endsWith(".png"));
 
         if (!(isJpg || isPng || hasValidExtension)) {
-            throw new RuntimeException("Solo JPG o PNG");
+            throw new BadRequestException("Solo JPG o PNG");
         }
 
         Profile profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil no encontrado"));
 
         String originalName = Paths.get(file.getOriginalFilename())
                 .getFileName()
@@ -164,7 +166,10 @@ public class ProfileService {
 
         String fileName = UUID.randomUUID() + "_" + originalName;
 
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "uploads");
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "uploads")
+                .toAbsolutePath()
+                .normalize();
+
         Files.createDirectories(uploadPath);
 
         if (profile.getProfilePicture() != null) {
@@ -180,14 +185,14 @@ public class ProfileService {
 
         return "/api/profile/avatar/" + fileName;
     }
-    
+
     public PublicProfileResponse getPublicProfile(Long meId, Long targetId) {
 
         Profile me = profileRepository.findById(meId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         Profile target = profileRepository.findById(targetId)
-                .orElseThrow(() -> new RuntimeException("Perfil no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil no encontrado"));
 
         var chatOpt = chatRepository.findBetweenProfiles(me, target);
 
@@ -231,5 +236,4 @@ public class ProfileService {
     private boolean blockedMe(Profile me, Profile other) {
         return blockRepository.existsByBlockerAndBlocked(other, me);
     }
-
 }

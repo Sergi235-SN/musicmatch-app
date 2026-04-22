@@ -29,6 +29,7 @@ public class SmtpEmailService implements EmailService {
     @Value("${app.auth.reset-password-url-base}")
     private String resetPasswordUrlBase;
 
+    @Override
     public void sendVerificationEmail(String to, String username, String token) {
         String verifyUrl = verifyEmailUrlBase + token;
         String safeUsername = escape(username);
@@ -38,8 +39,7 @@ public class SmtpEmailService implements EmailService {
         String plainText =
                 "Hola " + username + ",\n\n" +
                 "Gracias por registrarte en MusicMatch.\n\n" +
-                "Verifica tu cuenta desde este enlace:\n" +
-                verifyUrl + "\n\n" +
+                "Pulsa el botón \"Verificar cuenta\" para completar el proceso.\n\n" +
                 "Si no has creado una cuenta, puedes ignorar este mensaje.";
 
         String html = buildEmailTemplate(
@@ -50,32 +50,24 @@ public class SmtpEmailService implements EmailService {
                 Pulsa el botón para verificar tu cuenta y continuar.
                 """.formatted(safeUsername),
                 "Verificar cuenta",
-                verifyUrl,
-                """
-                Si el botón no funciona, copia y pega este enlace en tu navegador:
-                """,
-                verifyUrl,
-                null
+                verifyUrl
         );
 
         sendHtmlEmail(to, subject, plainText, html);
     }
 
+    @Override
     public void sendPasswordResetEmail(String to, String username, String token) {
         String resetUrl = resetPasswordUrlBase + token;
         String safeUsername = escape(username);
-        String safeToken = escape(token);
 
         String subject = "Recupera tu contraseña de MusicMatch";
 
         String plainText =
                 "Hola " + username + ",\n\n" +
                 "Hemos recibido una solicitud para restablecer tu contraseña.\n\n" +
-                "Puedes hacerlo desde este enlace:\n" +
-                resetUrl + "\n\n" +
-                "Si prefieres usar el token manualmente, aquí lo tienes:\n" +
-                token + "\n\n" +
-                "Si no has solicitado este cambio, ignora este mensaje.";
+                "Pulsa el botón \"Cambiar contraseña\" para continuar.\n\n" +
+                "Si no has solicitado este cambio, puedes ignorar este mensaje.";
 
         String html = buildEmailTemplate(
                 "Recupera tu contraseña",
@@ -84,13 +76,8 @@ public class SmtpEmailService implements EmailService {
                 Hemos recibido una solicitud para restablecer tu contraseña.<br><br>
                 Pulsa el botón para continuar con el proceso.
                 """.formatted(safeUsername),
-                "Restablecer contraseña",
-                resetUrl,
-                """
-                Si el botón no funciona, prueba con este enlace o utiliza el código manual dentro de la app.
-                """,
-                resetUrl,
-                safeToken
+                "Cambiar contraseña",
+                resetUrl
         );
 
         sendHtmlEmail(to, subject, plainText, html);
@@ -121,22 +108,8 @@ public class SmtpEmailService implements EmailService {
             String title,
             String bodyHtml,
             String buttonText,
-            String buttonUrl,
-            String fallbackText,
-            String fallbackUrl,
-            String token
+            String buttonUrl
     ) {
-        String tokenBlock = "";
-
-        if (token != null && !token.isBlank()) {
-            tokenBlock = """
-                    <div class="token-box">
-                        <div class="token-label">Código de recuperación</div>
-                        <div class="token-value">%s</div>
-                    </div>
-                    """.formatted(token);
-        }
-
         return """
                 <!DOCTYPE html>
                 <html lang="es">
@@ -189,7 +162,7 @@ public class SmtpEmailService implements EmailService {
 
                         .button-wrap {
                             text-align: center;
-                            margin: 28px 0;
+                            margin: 28px 0 10px;
                         }
 
                         .button {
@@ -201,44 +174,6 @@ public class SmtpEmailService implements EmailService {
                             border-radius: 12px;
                             font-weight: bold;
                             font-size: 15px;
-                        }
-
-                        .fallback {
-                            margin-top: 20px;
-                            font-size: 14px;
-                            color: #6b7280;
-                            word-break: break-word;
-                        }
-
-                        .link-box {
-                            margin-top: 10px;
-                            padding: 12px 14px;
-                            background: #f3f4f6;
-                            border-radius: 12px;
-                            font-size: 13px;
-                            color: #374151;
-                            word-break: break-all;
-                        }
-
-                        .token-box {
-                            margin-top: 22px;
-                            padding: 16px;
-                            background: #eef8f6;
-                            border-radius: 14px;
-                            text-align: center;
-                        }
-
-                        .token-label {
-                            font-size: 13px;
-                            color: #6b7280;
-                            margin-bottom: 8px;
-                        }
-
-                        .token-value {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #184f45;
-                            word-break: break-all;
                         }
 
                         .footer {
@@ -262,14 +197,6 @@ public class SmtpEmailService implements EmailService {
                                 <div class="button-wrap">
                                     <a class="button" href="%s">%s</a>
                                 </div>
-
-                                <div class="fallback">
-                                    %s
-                                </div>
-
-                                <div class="link-box">%s</div>
-
-                                %s
                             </div>
 
                             <div class="footer">
@@ -284,10 +211,7 @@ public class SmtpEmailService implements EmailService {
                 escape(title),
                 bodyHtml,
                 escape(buttonUrl),
-                escape(buttonText),
-                escape(fallbackText),
-                escape(fallbackUrl),
-                tokenBlock
+                escape(buttonText)
         );
     }
 

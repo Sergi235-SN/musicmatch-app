@@ -1,13 +1,17 @@
 package com.musicmatch.mobile.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,7 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.musicmatch.mobile.ui.theme.*
+import com.musicmatch.mobile.ui.theme.ColorFondo
+import com.musicmatch.mobile.ui.theme.ColorPrincipal
+import com.musicmatch.mobile.ui.theme.ColorSecundario
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.viewmodel.ChatViewModel
 import kotlinx.coroutines.delay
@@ -31,12 +37,12 @@ fun ChatDetailScreen(
     navController: NavController,
     viewModel: ChatViewModel = viewModel()
 ) {
-
     val context = LocalContext.current
 
     val userId by viewModel.userId.collectAsState()
     val messages by viewModel.messages.collectAsState()
     val chats by viewModel.chats.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     var text by remember { mutableStateOf("") }
     var showMenu by remember { mutableStateOf(false) }
@@ -48,16 +54,21 @@ fun ChatDetailScreen(
         viewModel.load(context)
 
         while (true) {
-
-            val exists = viewModel.chatExists(chatId)
+            val exists = viewModel.refreshChat(chatId)
 
             if (!exists) {
                 navController.popBackStack()
                 break
             }
 
-            viewModel.openChat(chatId)
-            delay(2000)
+            delay(3000)
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
         }
     }
 
@@ -74,7 +85,6 @@ fun ChatDetailScreen(
                                 .background(Color.LightGray),
                             contentAlignment = Alignment.Center
                         ) {
-
                             if (!chat?.otherProfileImage.isNullOrEmpty()) {
                                 AsyncImage(
                                     model = NetworkConfig.getAvatarUrl(chat.otherProfileImage),
@@ -105,7 +115,6 @@ fun ChatDetailScreen(
                 },
                 actions = {
                     Box {
-
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
@@ -151,9 +160,7 @@ fun ChatDetailScreen(
                     .padding(horizontal = 10.dp),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-
                 items(messages) { msg ->
-
                     val isMe = msg.senderId == userId
 
                     Box(
@@ -163,7 +170,6 @@ fun ChatDetailScreen(
                         contentAlignment =
                             if (isMe) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-
                         Card(
                             shape = RoundedCornerShape(
                                 topStart = 18.dp,
@@ -176,7 +182,6 @@ fun ChatDetailScreen(
                                     if (isMe) ColorPrincipal else Color.White
                             )
                         ) {
-
                             Text(
                                 text = msg.content ?: "",
                                 modifier = Modifier.padding(10.dp),

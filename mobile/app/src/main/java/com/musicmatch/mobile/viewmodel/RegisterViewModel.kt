@@ -47,14 +47,22 @@ class RegisterViewModel : ViewModel() {
                     RegisterRequest(currentUser.username, currentUser.email, currentUser.password)
                 )
 
-                if (response.success && response.data != null) {
+                if (response.success) {
                     Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                     onSuccess(currentUser.email, currentUser.password)
                 } else {
-                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        response.message ?: "No se pudo completar el registro",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    e.message ?: "No se pudo conectar con el servidor",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.musicmatch.mobile.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import coil.compose.AsyncImage
 import com.musicmatch.mobile.data.ApiService
 import com.musicmatch.mobile.data.repository.UserRepository
 import com.musicmatch.mobile.model.ExperienceLevel
+import com.musicmatch.mobile.navigation.Screen
 import com.musicmatch.mobile.ui.components.SmartChip
 import com.musicmatch.mobile.ui.theme.*
 import com.musicmatch.mobile.utils.TokenManager
@@ -76,6 +78,13 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadData(context)
+    }
+
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
     }
 
     if (showInstrumentDialog) {
@@ -134,8 +143,25 @@ fun ProfileScreen(
                     IconButton(onClick = { menuExpanded = true }) {
                         Icon(Icons.Default.Menu, null, tint = Color.White)
                     }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = { logout() })
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Usuarios bloqueados") },
+                            onClick = {
+                                menuExpanded = false
+                                navController.navigate(Screen.BlockedUsers.route)
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = { Text("Cerrar sesión") },
+                            onClick = {
+                                menuExpanded = false
+                                logout()
+                            }
+                        )
                     }
                 }
             )
@@ -151,7 +177,10 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = { editing = !editing }) {
+                IconButton(
+                    onClick = { editing = !editing },
+                    enabled = !viewModel.isLoading
+                ) {
                     Icon(
                         Icons.Default.Edit,
                         null,
@@ -166,18 +195,42 @@ fun ProfileScreen(
                         .size(90.dp)
                         .clip(CircleShape)
                         .background(Color.LightGray)
-                        .clickable(enabled = editing) { imagePicker.launch("image/*") },
+                        .clickable(enabled = editing && !viewModel.isLoading) {
+                            imagePicker.launch("image/*")
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     when {
-                        viewModel.imageUri != null -> AsyncImage(model = viewModel.imageUri, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        !viewModel.currentAvatarUrl.isNullOrEmpty() -> AsyncImage(model = viewModel.currentAvatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        else -> Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
+                        viewModel.imageUri != null -> AsyncImage(
+                            model = viewModel.imageUri,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        !viewModel.currentAvatarUrl.isNullOrEmpty() -> AsyncImage(
+                            model = viewModel.currentAvatarUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        else -> Icon(
+                            Icons.Default.Person,
+                            null,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
                 }
+
                 Spacer(Modifier.width(16.dp))
+
                 Column(modifier = Modifier.alpha(if (editing) 1f else 0.8f)) {
-                    Text(viewModel.username ?: "Usuario", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(
+                        viewModel.username ?: "Usuario",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
                     Text(viewModel.email ?: "email", color = Color.Gray)
                 }
             }
@@ -185,7 +238,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = viewModel.biography,
                 onValueChange = { if (editing) viewModel.biography = it },
-                enabled = editing,
+                enabled = editing && !viewModel.isLoading,
                 label = { Text("Biografía") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp)
@@ -193,44 +246,66 @@ fun ProfileScreen(
 
             var expandedCity by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
-                expanded = expandedCity && editing,
-                onExpandedChange = { if (editing) expandedCity = !expandedCity }
+                expanded = expandedCity && editing && !viewModel.isLoading,
+                onExpandedChange = {
+                    if (editing && !viewModel.isLoading) expandedCity = !expandedCity
+                }
             ) {
                 OutlinedTextField(
                     value = viewModel.availableCities.find { it.id == viewModel.selectedCityId }?.name ?: "Selecciona ciudad",
                     onValueChange = {},
                     readOnly = true,
-                    enabled = editing,
+                    enabled = editing && !viewModel.isLoading,
                     label = { Text("Ciudad") },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCity && editing) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCity && editing && !viewModel.isLoading) }
                 )
-                ExposedDropdownMenu(expanded = expandedCity, onDismissRequest = { expandedCity = false }) {
+                ExposedDropdownMenu(
+                    expanded = expandedCity,
+                    onDismissRequest = { expandedCity = false }
+                ) {
                     viewModel.availableCities.forEach { city ->
-                        DropdownMenuItem(text = { Text(city.name) }, onClick = { viewModel.selectedCityId = city.id; expandedCity = false })
+                        DropdownMenuItem(
+                            text = { Text(city.name) },
+                            onClick = {
+                                viewModel.selectedCityId = city.id
+                                expandedCity = false
+                            }
+                        )
                     }
                 }
             }
 
             var expandedExp by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
-                expanded = expandedExp && editing,
-                onExpandedChange = { if (editing) expandedExp = !expandedExp }
+                expanded = expandedExp && editing && !viewModel.isLoading,
+                onExpandedChange = {
+                    if (editing && !viewModel.isLoading) expandedExp = !expandedExp
+                }
             ) {
                 OutlinedTextField(
                     value = viewModel.globalExperience.name.lowercase().replaceFirstChar { it.uppercase() },
                     onValueChange = {},
                     readOnly = true,
-                    enabled = editing,
+                    enabled = editing && !viewModel.isLoading,
                     label = { Text("Experiencia Global") },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedExp && editing) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedExp && editing && !viewModel.isLoading) }
                 )
-                ExposedDropdownMenu(expanded = expandedExp, onDismissRequest = { expandedExp = false }) {
+                ExposedDropdownMenu(
+                    expanded = expandedExp,
+                    onDismissRequest = { expandedExp = false }
+                ) {
                     ExperienceLevel.entries.forEach { level ->
-                        DropdownMenuItem(text = { Text(level.name.lowercase().replaceFirstChar { it.uppercase() }) }, onClick = { viewModel.globalExperience = level; expandedExp = false })
+                        DropdownMenuItem(
+                            text = { Text(level.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                            onClick = {
+                                viewModel.globalExperience = level
+                                expandedExp = false
+                            }
+                        )
                     }
                 }
             }
@@ -239,12 +314,19 @@ fun ProfileScreen(
                 Text("Instrumentos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(Modifier.weight(1f))
                 if (editing) {
-                    IconButton(onClick = { showInstrumentDialog = true }) {
+                    IconButton(
+                        onClick = { showInstrumentDialog = true },
+                        enabled = !viewModel.isLoading
+                    ) {
                         Icon(Icons.Default.Edit, null, tint = ColorSecundario)
                     }
                 }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 viewModel.selectedInstruments.take(6).forEach { (item, level) ->
                     SmartChip(text = item.name, level = level)
                 }
@@ -257,12 +339,19 @@ fun ProfileScreen(
                 Text("Estilos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(Modifier.weight(1f))
                 if (editing) {
-                    IconButton(onClick = { showStyleDialog = true }) {
+                    IconButton(
+                        onClick = { showStyleDialog = true },
+                        enabled = !viewModel.isLoading
+                    ) {
                         Icon(Icons.Default.Edit, null, tint = ColorSecundario)
                     }
                 }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 viewModel.selectedStyles.take(6).forEach { item ->
                     SmartChip(text = item.name)
                 }
@@ -275,17 +364,25 @@ fun ProfileScreen(
                 Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = { viewModel.saveFullProfile(context) { editing = false } },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    enabled = !viewModel.isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ColorSecundario),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     if (viewModel.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
                     } else {
                         Text("Guardar cambios", color = Color.White, fontSize = 16.sp)
                     }
                 }
             }
+
             Spacer(Modifier.height(20.dp))
         }
     }

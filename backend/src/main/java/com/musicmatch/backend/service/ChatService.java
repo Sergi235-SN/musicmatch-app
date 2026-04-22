@@ -7,10 +7,21 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.musicmatch.backend.dto.*;
+import com.musicmatch.backend.dto.ChatPreview;
+import com.musicmatch.backend.dto.ChatResponse;
+import com.musicmatch.backend.dto.MessageResponse;
+import com.musicmatch.backend.exception.BadRequestException;
+import com.musicmatch.backend.exception.ForbiddenException;
+import com.musicmatch.backend.exception.ResourceNotFoundException;
 import com.musicmatch.backend.exception.UserBlockedException;
-import com.musicmatch.backend.model.*;
-import com.musicmatch.backend.repository.*;
+import com.musicmatch.backend.model.Chat;
+import com.musicmatch.backend.model.ChatStatus;
+import com.musicmatch.backend.model.Message;
+import com.musicmatch.backend.model.Profile;
+import com.musicmatch.backend.repository.ChatRepository;
+import com.musicmatch.backend.repository.MessageRepository;
+import com.musicmatch.backend.repository.ProfileBlockRepository;
+import com.musicmatch.backend.repository.ProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,8 +42,15 @@ public class ChatService {
     @Transactional
     public ChatResponse requestOrGetChat(Long fromId, Long toId) {
 
-        Profile from = profileRepository.findById(fromId).orElseThrow();
-        Profile to = profileRepository.findById(toId).orElseThrow();
+        Profile from = profileRepository.findById(fromId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        Profile to = profileRepository.findById(toId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario destino no encontrado"));
+
+        if (from.getId().equals(to.getId())) {
+            throw new BadRequestException("No puedes iniciar un chat contigo mismo");
+        }
 
         if (isBlocked(from, to)) {
             throw new UserBlockedException("No puedes iniciar chat con este usuario");
@@ -59,10 +77,11 @@ public class ChatService {
     @Transactional
     public void acceptChat(Long chatId, Long userId) {
 
-        Chat chat = chatRepository.findById(chatId).orElseThrow();
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat no encontrado"));
 
         if (!chat.getUser2().getId().equals(userId)) {
-            throw new RuntimeException("No autorizado");
+            throw new ForbiddenException("No autorizado");
         }
 
         chat.setStatus(ChatStatus.ACTIVE);
@@ -71,15 +90,22 @@ public class ChatService {
     @Transactional
     public void sendMessage(Long chatId, Long senderId, String content) {
 
-        Chat chat = chatRepository.findById(chatId).orElseThrow();
-        Profile sender = profileRepository.findById(senderId).orElseThrow();
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat no encontrado"));
+
+        Profile sender = profileRepository.findById(senderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (content == null || content.isBlank()) {
+            throw new BadRequestException("El mensaje no puede estar vacío");
+        }
 
         if (chat.isBlocked()) {
-            throw new RuntimeException("Chat bloqueado");
+            throw new BadRequestException("Chat bloqueado");
         }
 
         if (chat.getStatus() != ChatStatus.ACTIVE) {
-            throw new RuntimeException("Chat no activo");
+            throw new BadRequestException("Chat no activo");
         }
 
         boolean isParticipant =
@@ -87,13 +113,13 @@ public class ChatService {
             chat.getUser2().getId().equals(senderId);
 
         if (!isParticipant) {
-            throw new RuntimeException("No autorizado");
+            throw new ForbiddenException("No autorizado");
         }
 
         Message msg = new Message();
         msg.setChat(chat);
         msg.setSender(sender);
-        msg.setContent(content);
+        msg.setContent(content.trim());
         msg.setCreatedAt(LocalDateTime.now());
 
         messageRepository.save(msg);
@@ -128,14 +154,15 @@ public class ChatService {
 
     public List<MessageResponse> getMessages(Long chatId, Long userId) {
 
-        Chat chat = chatRepository.findById(chatId).orElseThrow();
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat no encontrado"));
 
         boolean isParticipant =
             chat.getUser1().getId().equals(userId) ||
             chat.getUser2().getId().equals(userId);
 
         if (!isParticipant) {
-            throw new RuntimeException("No autorizado");
+            throw new ForbiddenException("No autorizado");
         }
 
         return messageRepository.findByChatIdOrderByCreatedAtAsc(chatId).stream()
@@ -151,10 +178,11 @@ public class ChatService {
     @Transactional
     public void rejectChat(Long chatId, Long userId) {
 
-        Chat chat = chatRepository.findById(chatId).orElseThrow();
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat no encontrado"));
 
         if (!chat.getUser2().getId().equals(userId)) {
-            throw new RuntimeException("No autorizado");
+            throw new ForbiddenException("No autorizado");
         }
 
         chatRepository.delete(chat);

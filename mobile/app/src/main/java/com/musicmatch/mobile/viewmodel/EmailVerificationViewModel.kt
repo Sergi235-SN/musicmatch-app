@@ -39,14 +39,7 @@ class EmailVerificationViewModel : ViewModel() {
         if (email.isBlank()) return
         if (pollingJob != null) return
 
-        uiState.value = EmailVerificationUiState(
-            isChecking = true,
-            isVerified = false,
-            isLoggingIn = false,
-            isSuccess = false,
-            userId = null,
-            errorMessage = null
-        )
+        uiState.value = EmailVerificationUiState()
 
         pollingJob = viewModelScope.launch {
             var shouldContinuePolling = true
@@ -102,7 +95,7 @@ class EmailVerificationViewModel : ViewModel() {
                                         isVerified = true,
                                         isLoggingIn = false,
                                         isSuccess = false,
-                                        errorMessage = loginResponse.message
+                                        errorMessage = loginResponse.message ?: "No se pudo iniciar sesión"
                                     )
                                     shouldContinuePolling = false
                                 }
@@ -150,15 +143,16 @@ class EmailVerificationViewModel : ViewModel() {
                         uiState.value = uiState.value.copy(
                             isChecking = false,
                             isLoggingIn = false,
-                            errorMessage = verificationResponse.message
+                            errorMessage = verificationResponse.message ?: "No se pudo comprobar la verificación"
                         )
                     }
                 } catch (e: Exception) {
                     uiState.value = uiState.value.copy(
                         isChecking = false,
                         isLoggingIn = false,
-                        errorMessage = "No se pudo comprobar la verificación"
+                        errorMessage = e.message ?: "No se pudo comprobar la verificación"
                     )
+                    shouldContinuePolling = false
                 }
 
                 if (shouldContinuePolling && !uiState.value.isSuccess) {

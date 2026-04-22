@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.musicmatch.mobile.data.ApiService
@@ -72,7 +73,9 @@ fun ResetPasswordScreen(
                 Text(
                     text = "Escribe tu nueva contraseña.",
                     fontSize = 15.sp,
-                    color = Color.DarkGray
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -95,7 +98,10 @@ fun ResetPasswordScreen(
                     text = "Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número",
                     fontSize = 12.sp,
                     color = Color.Gray,
-                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))

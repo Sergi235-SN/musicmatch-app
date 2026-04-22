@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.musicmatch.backend.dto.ApiResponse;
 import com.musicmatch.backend.dto.MusicalOptionsResponse;
 import com.musicmatch.backend.dto.PublicProfileResponse;
 import com.musicmatch.backend.dto.UpdateProfileRequest;
@@ -46,20 +47,25 @@ public class ProfileController {
         return profileService.getMusicalOptions();
     }
 
-    
     @GetMapping("/cities")
     public List<City> getCities() {
         return cityRepository.findAll();
     }
 
     @PostMapping("/avatar")
-    public String uploadProfileImage(
+    public ApiResponse<String> uploadProfileImage(
             @RequestHeader("Authorization") String authHeader,
             @RequestParam("file") MultipartFile file
     ) throws IOException {
 
         Long userId = extractUserId(authHeader);
-        return profileService.saveProfileImage(userId, file);
+        String avatarPath = profileService.saveProfileImage(userId, file);
+
+        return new ApiResponse<>(
+                true,
+                "Avatar subido correctamente",
+                avatarPath
+        );
     }
 
     @GetMapping("/avatar/{filename}")
@@ -84,10 +90,6 @@ public class ProfileController {
         if (contentType == null) {
             contentType = "application/octet-stream";
         }
-
-        System.out.println("REQUEST FILE: " + filename);
-        System.out.println("FULL PATH: " + filePath);
-        System.out.println("EXISTS: " + Files.exists(filePath));
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, contentType)
@@ -114,5 +116,4 @@ public class ProfileController {
 
         return jwtUtil.extractUserId(token);
     }
-
 }

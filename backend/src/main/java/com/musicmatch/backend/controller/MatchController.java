@@ -1,8 +1,14 @@
 package com.musicmatch.backend.controller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.*;
 
-import com.musicmatch.backend.dto.*;
+import com.musicmatch.backend.dto.BlockRequest;
+import com.musicmatch.backend.dto.BlockedUserResponse;
+import com.musicmatch.backend.dto.MatchCandidatesResponse;
+import com.musicmatch.backend.dto.SwipeRequest;
+import com.musicmatch.backend.dto.SwipeResponse;
 import com.musicmatch.backend.service.MatchService;
 import com.musicmatch.backend.utils.JwtUtil;
 
@@ -64,6 +70,14 @@ public class MatchController {
         );
     }
 
+    @GetMapping("/blocked")
+    public List<BlockedUserResponse> getBlockedUsers(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        Long userId = extractUserId(authHeader);
+        return matchService.getBlockedUsers(userId);
+    }
+
     private Long extractUserId(String authHeader) {
         String token = authHeader.replace("Bearer ", "");
 
@@ -73,5 +87,4 @@ public class MatchController {
 
         return jwtUtil.extractUserId(token);
     }
-
 }

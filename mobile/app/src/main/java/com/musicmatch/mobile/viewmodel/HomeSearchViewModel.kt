@@ -44,10 +44,11 @@ class HomeSearchViewModel(
 
     fun loadFilters(token: String) {
         viewModelScope.launch {
-            runCatching {
+            try {
                 val options = userRepository.getMusicalOptions(token)
                 _availableInstruments.value = options.instruments
                 _availableStyles.value = options.styles
+            } catch (_: Exception) {
             }
         }
     }
@@ -87,20 +88,22 @@ class HomeSearchViewModel(
     }
 
     private fun triggerSearch(token: String) {
-
         searchJob?.cancel()
 
         searchJob = viewModelScope.launch {
             delay(300)
 
-            val request = ProfileSearchRequest(
-                query = _query.value.ifBlank { null },
-                instrumentIds = _selectedInstruments.value.takeIf { it.isNotEmpty() },
-                styleIds = _selectedStyles.value.takeIf { it.isNotEmpty() },
-                experienceLevel = _experience.value
-            )
+            try {
+                val request = ProfileSearchRequest(
+                    query = _query.value.ifBlank { null },
+                    instrumentIds = _selectedInstruments.value.takeIf { it.isNotEmpty() },
+                    styleIds = _selectedStyles.value.takeIf { it.isNotEmpty() },
+                    experienceLevel = _experience.value
+                )
 
-            _profiles.value = searchRepository.searchProfiles(token, request)
+                _profiles.value = searchRepository.searchProfiles(token, request)
+            } catch (_: Exception) {
+            }
         }
     }
 

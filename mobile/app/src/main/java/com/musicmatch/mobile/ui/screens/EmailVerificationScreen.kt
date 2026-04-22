@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -86,7 +87,9 @@ fun EmailVerificationScreen(
                             text = "Verificado correctamente",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorPrincipal
+                            color = ColorPrincipal,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(28.dp))
@@ -120,10 +123,12 @@ fun EmailVerificationScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text(
-                            text = "Código de verificación enviado a",
+                            text = "Te hemos enviado un enlace de verificación a",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorPrincipal
+                            color = ColorPrincipal,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -131,7 +136,9 @@ fun EmailVerificationScreen(
                         Text(
                             text = email,
                             fontSize = 16.sp,
-                            color = Color.DarkGray
+                            color = Color.DarkGray,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -143,7 +150,9 @@ fun EmailVerificationScreen(
                                 Text(
                                     text = "Correo verificado. Iniciando sesión...",
                                     fontSize = 14.sp,
-                                    color = Color.Gray
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
 
@@ -151,9 +160,11 @@ fun EmailVerificationScreen(
                                 CircularProgressIndicator(color = ColorSecundario)
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Estamos esperando a que verifiques tu correo...",
+                                    text = "Estamos comprobando si ya has verificado tu correo...",
                                     fontSize = 14.sp,
-                                    color = Color.Gray
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -163,7 +174,9 @@ fun EmailVerificationScreen(
                             Text(
                                 text = it,
                                 fontSize = 13.sp,
-                                color = Color.Red
+                                color = Color.Red,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
                             Spacer(modifier = Modifier.height(20.dp))

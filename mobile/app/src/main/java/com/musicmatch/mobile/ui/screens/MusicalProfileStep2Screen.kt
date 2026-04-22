@@ -1,6 +1,7 @@
 package com.musicmatch.mobile.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -51,6 +52,13 @@ fun MusicalProfileStep2Screen(
         viewModel.loadData(context)
     }
 
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
+
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -99,7 +107,9 @@ fun MusicalProfileStep2Screen(
                         .size(135.dp)
                         .clip(CircleShape)
                         .background(Color.LightGray)
-                        .clickable { imagePicker.launch("image/*") },
+                        .clickable(enabled = !viewModel.isLoading) {
+                            imagePicker.launch("image/*")
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     when {
@@ -144,7 +154,8 @@ fun MusicalProfileStep2Screen(
                     label = { Text("Biografía") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !viewModel.isLoading
                 )
 
                 Row(
@@ -168,8 +179,10 @@ fun MusicalProfileStep2Screen(
                 var expanded by remember { mutableStateOf(false) }
 
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
+                    expanded = expanded && !viewModel.isLoading,
+                    onExpandedChange = {
+                        if (!viewModel.isLoading) expanded = !expanded
+                    }
                 ) {
                     OutlinedTextField(
                         value = viewModel.availableCities
@@ -177,6 +190,7 @@ fun MusicalProfileStep2Screen(
                             ?.name ?: "Selecciona ciudad",
                         onValueChange = {},
                         readOnly = true,
+                        enabled = !viewModel.isLoading,
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth(),
@@ -205,6 +219,7 @@ fun MusicalProfileStep2Screen(
                     onClick = {
                         viewModel.saveStep2(context, onFinish)
                     },
+                    enabled = !viewModel.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),

@@ -490,18 +490,64 @@ public class AuthController {
                             font-size: 14px;
                         }
 
+                        .password-wrapper {
+                            position: relative;
+                            width: 100%%;
+                            margin-bottom: 18px;
+                        }
+
                         input {
                             width: 100%%;
-                            padding: 14px 14px;
-                            margin-bottom: 18px;
+                            padding: 14px 50px 14px 14px;
                             border: 1px solid #d1d5db;
                             border-radius: 12px;
                             font-size: 15px;
                             outline: none;
+                            transition: border-color 0.2s ease, box-shadow 0.2s ease;
                         }
 
                         input:focus {
                             border-color: var(--color-secundario);
+                            box-shadow: 0 0 0 3px rgba(43, 183, 159, 0.12);
+                        }
+
+                        .toggle-password {
+                            position: absolute;
+                            top: 50%%;
+                            right: 12px;
+                            transform: translateY(-50%%);
+                            width: 32px;
+                            height: 32px;
+                            border: none;
+                            background: transparent;
+                            cursor: pointer;
+                            padding: 0;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 8px;
+                            color: var(--color-texto-suave);
+                            transition: background-color 0.2s ease, color 0.2s ease;
+                        }
+
+                        .toggle-password:hover {
+                            background: rgba(24, 79, 69, 0.06);
+                            color: var(--color-principal);
+                        }
+
+                        .toggle-password:focus-visible {
+                            outline: 2px solid rgba(43, 183, 159, 0.35);
+                            outline-offset: 2px;
+                        }
+
+                        .toggle-password svg {
+                            width: 20px;
+                            height: 20px;
+                            stroke: currentColor;
+                            fill: none;
+                            stroke-width: 2;
+                            stroke-linecap: round;
+                            stroke-linejoin: round;
                         }
 
                         .button {
@@ -514,6 +560,10 @@ public class AuthController {
                             font-size: 16px;
                             font-weight: bold;
                             cursor: pointer;
+                        }
+
+                        .button:hover {
+                            filter: brightness(0.98);
                         }
 
                         .error-box {
@@ -551,22 +601,54 @@ public class AuthController {
                                 <input type="hidden" name="token" value="%s" />
 
                                 <label for="password">Nueva contraseña</label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    placeholder="Mínimo 8 caracteres"
-                                    required
-                                />
+                                <div class="password-wrapper">
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        placeholder="Mínimo 8 caracteres"
+                                        required
+                                    />
+                                    <button
+                                        class="toggle-password"
+                                        type="button"
+                                        onclick="togglePassword('password', this)"
+                                        aria-label="Mostrar contraseña"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="icon-eye">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </div>
 
                                 <label for="confirmPassword">Repetir contraseña</label>
-                                <input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type="password"
-                                    placeholder="Vuelve a escribirla"
-                                    required
-                                />
+                                <div class="password-wrapper">
+                                    <input
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        type="password"
+                                        placeholder="Vuelve a escribirla"
+                                        required
+                                    />
+                                    <button
+                                        class="toggle-password"
+                                        type="button"
+                                        onclick="togglePassword('confirmPassword', this)"
+                                        aria-label="Mostrar contraseña"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="icon-eye">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </div>
 
                                 <button class="button" type="submit">Guardar contraseña</button>
                             </form>
@@ -576,6 +658,37 @@ public class AuthController {
                     </div>
 
                     <div class="bottombar"></div>
+
+                    <script>
+                        const eyeIcon = `
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        `;
+
+                        const eyeOffIcon = `
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 3l18 18"></path>
+                                <path d="M10.6 10.7a3 3 0 0 0 4.2 4.2"></path>
+                                <path d="M9.9 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3.2 4.2"></path>
+                                <path d="M6.6 6.7C4.1 8.2 2.5 12 2.5 12A17.3 17.3 0 0 0 12 19c1.8 0 3.4-.4 4.8-1.1"></path>
+                            </svg>
+                        `;
+
+                        function togglePassword(inputId, button) {
+                            const input = document.getElementById(inputId);
+                            const isHidden = input.type === 'password';
+
+                            input.type = isHidden ? 'text' : 'password';
+                            button.innerHTML = isHidden ? eyeOffIcon : eyeIcon;
+                            button.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+                            button.setAttribute(
+                                'aria-label',
+                                isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                            );
+                        }
+                    </script>
                 </body>
                 </html>
                 """.formatted(errorBlock, safeToken);

@@ -1,12 +1,17 @@
 package com.musicmatch.mobile.viewmodel
 
 import android.content.Context
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.musicmatch.mobile.data.repository.MatchRepository
 import com.musicmatch.mobile.data.repository.UserRepository
-import com.musicmatch.mobile.model.dto.*
+import com.musicmatch.mobile.model.dto.InstrumentLevelRequest
+import com.musicmatch.mobile.model.dto.MusicalOptionDTO
+import com.musicmatch.mobile.model.dto.ProfileCardDTO
+import com.musicmatch.mobile.model.dto.SwipeRequest
 import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.launch
 
@@ -68,17 +73,15 @@ class MatchViewModel(
                 candidates = res.candidates
 
                 message = when {
-                    res.candidates.isEmpty() ->
-                        "No hay más músicos cerca de ti"
-                    !res.message.isNullOrBlank() ->
-                        res.message
+                    res.candidates.isEmpty() -> "No hay más músicos cerca de ti"
+                    !res.message.isNullOrBlank() -> res.message
                     else -> null
                 }
 
                 currentIndex = 0
 
             } catch (e: Exception) {
-                message = "Error al cargar: ${e.localizedMessage}"
+                message = e.message ?: "No se pudieron cargar los matches"
             } finally {
                 loading = false
             }
@@ -112,11 +115,10 @@ class MatchViewModel(
                 refreshCandidates()
 
             } catch (e: Exception) {
-                message = "Error en la conexión"
+                message = e.message ?: "No se pudo registrar tu decisión"
             }
         }
     }
-
 
     private fun refreshCandidates() {
         viewModelScope.launch {
@@ -125,21 +127,17 @@ class MatchViewModel(
 
                 profileComplete = res.profileComplete
                 candidates = res.candidates
-
                 currentIndex = 0
 
                 message = when {
-                    res.candidates.isEmpty() ->
-                        "No hay más músicos cerca de ti"
-                    !res.message.isNullOrBlank() ->
-                        res.message
+                    res.candidates.isEmpty() -> "No hay más músicos cerca de ti"
+                    !res.message.isNullOrBlank() -> res.message
                     else -> null
                 }
 
             } catch (e: Exception) {
-                message = "Error refrescando candidatos"
+                message = e.message ?: "No se pudieron actualizar los candidatos"
             }
         }
     }
-
 }

@@ -1,5 +1,6 @@
 package com.musicmatch.mobile.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +21,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.musicmatch.mobile.model.dto.ChatPreview
-import com.musicmatch.mobile.ui.theme.*
+import com.musicmatch.mobile.ui.theme.ColorFondo
+import com.musicmatch.mobile.ui.theme.ColorPrincipal
+import com.musicmatch.mobile.ui.theme.ColorSecundario
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.viewmodel.ChatViewModel
 
@@ -30,12 +33,19 @@ fun ChatRequestsScreen(
     navController: NavController,
     viewModel: ChatViewModel = viewModel()
 ) {
-
     val context = LocalContext.current
     val requests by viewModel.pendingChats.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.load(context)
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
     }
 
     Scaffold(
@@ -68,31 +78,25 @@ fun ChatRequestsScreen(
                 .padding(padding)
                 .background(ColorFondo)
         ) {
-
             if (requests.isEmpty()) {
-
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("No tienes solicitudes")
                 }
-
             } else {
-
                 LazyColumn(
                     contentPadding = PaddingValues(10.dp)
                 ) {
-
                     items(requests) { chat ->
-
                         RequestItem(
                             chat = chat,
                             onAccept = {
-                                viewModel.acceptChat(context, chat.chatId)
+                                viewModel.acceptChat(chat.chatId)
                             },
                             onReject = {
-                                viewModel.rejectChat(context, chat.chatId)
+                                viewModel.rejectChat(chat.chatId)
                             }
                         )
                     }
@@ -108,21 +112,18 @@ fun RequestItem(
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
                 modifier = Modifier
                     .size(46.dp)
@@ -130,7 +131,6 @@ fun RequestItem(
                     .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
-
                 if (!chat.otherProfileImage.isNullOrEmpty()) {
                     AsyncImage(
                         model = NetworkConfig.getAvatarUrl(chat.otherProfileImage),
@@ -149,13 +149,11 @@ fun RequestItem(
             Spacer(Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(chat.otherUsername, color = ColorPrincipal)
                 Text("Quiere iniciar chat", color = Color.Gray)
             }
 
             Row {
-
                 Button(
                     onClick = onAccept,
                     colors = ButtonDefaults.buttonColors(ColorSecundario)

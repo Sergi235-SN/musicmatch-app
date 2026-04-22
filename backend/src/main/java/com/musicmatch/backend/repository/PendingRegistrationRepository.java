@@ -1,5 +1,6 @@
 package com.musicmatch.backend.repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,6 @@ public interface PendingRegistrationRepository extends JpaRepository<PendingRegi
     Optional<PendingRegistration> findByUsername(String username);
 
     Optional<PendingRegistration> findByTokenHash(String tokenHash);
+
+    long deleteAllByExpiresAtBefore(LocalDateTime dateTime);
 }

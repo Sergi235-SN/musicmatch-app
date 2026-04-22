@@ -3,6 +3,7 @@ package com.musicmatch.mobile.data
 import com.musicmatch.mobile.model.City
 import com.musicmatch.mobile.model.dto.ApiResponse
 import com.musicmatch.mobile.model.dto.BlockRequest
+import com.musicmatch.mobile.model.dto.BlockedUserDTO
 import com.musicmatch.mobile.model.dto.ChatPreview
 import com.musicmatch.mobile.model.dto.ChatRequest
 import com.musicmatch.mobile.model.dto.ChatResponse
@@ -26,11 +27,8 @@ import com.musicmatch.mobile.model.dto.UpdateProfileRequest
 import com.musicmatch.mobile.model.dto.UserProfileResponse
 import com.musicmatch.mobile.model.dto.UserResponse
 import com.musicmatch.mobile.model.dto.VerificationStatusResponse
-import com.musicmatch.mobile.utils.NetworkConfig
 import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -87,7 +85,7 @@ interface ApiService {
     suspend fun uploadAvatar(
         @Header("Authorization") token: String,
         @Part file: MultipartBody.Part
-    ): String
+    ): ApiResponse<String>
 
     @GET("api/profile/public/{userId}")
     suspend fun getPublicProfile(
@@ -169,14 +167,12 @@ interface ApiService {
         @Query("email") email: String
     ): ApiResponse<VerificationStatusResponse>
 
-    companion object {
-        fun create(): ApiService {
-            val retrofit = Retrofit.Builder()
-                .baseUrl(NetworkConfig.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
+    @GET("api/matches/blocked")
+    suspend fun getBlockedUsers(
+        @Header("Authorization") token: String
+    ): List<BlockedUserDTO>
 
-            return retrofit.create(ApiService::class.java)
-        }
+    companion object {
+        fun create(): ApiService = ApiClient.getService()
     }
 }

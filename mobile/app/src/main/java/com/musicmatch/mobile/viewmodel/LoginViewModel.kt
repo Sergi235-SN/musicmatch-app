@@ -18,7 +18,9 @@ class LoginViewModel : ViewModel() {
     var email = mutableStateOf("")
     var password = mutableStateOf("")
 
-    private val repository = UserRepository(ApiService.create())
+    private fun repository(): UserRepository {
+        return UserRepository(ApiService.create())
+    }
 
     fun onEmailChange(newEmail: String) {
         email.value = newEmail
@@ -39,7 +41,7 @@ class LoginViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val response = repository.loginUser(
+                val response = repository().loginUser(
                     LoginRequest(email.value, password.value)
                 )
 
@@ -52,7 +54,7 @@ class LoginViewModel : ViewModel() {
                     if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
                         Toast.makeText(
                             context,
-                            "No se pudo iniciar sesión. Revisa si has verificado tu correo.",
+                            "No se pudo iniciar sesión. Revisa tu correo o vuelve a intentarlo.",
                             Toast.LENGTH_SHORT
                         ).show()
                         return@launch
@@ -69,12 +71,19 @@ class LoginViewModel : ViewModel() {
                     onSuccess(userId)
 
                 } else {
-                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        response.message ?: "No se pudo iniciar sesión",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
             } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    e.message ?: "No se pudo conectar con el servidor",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -135,7 +144,7 @@ class LoginViewModel : ViewModel() {
 
     private suspend fun getCurrentUsername(token: String): String? {
         return try {
-            val response = repository.getCurrentUser(token)
+            val response = repository().getCurrentUser(token)
             if (response.success && response.data != null) {
                 response.data.username
             } else {
@@ -150,7 +159,7 @@ class LoginViewModel : ViewModel() {
         val refreshToken = tokenManager.getRefreshToken(context) ?: return false
 
         return try {
-            val response = repository.refreshAccessToken(refreshToken)
+            val response = repository().refreshAccessToken(refreshToken)
             val newAccessToken = response.data?.token
 
             if (response.success && !newAccessToken.isNullOrBlank()) {
@@ -163,4 +172,34 @@ class LoginViewModel : ViewModel() {
             false
         }
     }
+
+    suspend fun hasValidSession(context: Context): Boolean {
+        val accessToken = tokenManager.getAccessToken(context)
+
+        if (accessToken.isNullOrEmpty()) {
+            return false
+        }
+
+        return try {
+            val username = getCurrentUsername(accessToken)
+
+            if (username != null) {
+                true
+            } else {
+                val refreshed = refreshSession(context)
+                if (refreshed) {
+                    val newAccessToken = tokenManager.getAccessToken(context)
+                    val refreshedUsername = newAccessToken?.let { getCurrentUsername(it) }
+                    refreshedUsername != null
+                } else {
+                    tokenManager.clearTokens(context)
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            tokenManager.clearTokens(context)
+            false
+        }
+    }
+
 }

@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -119,14 +120,32 @@ public class UserService {
             return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
         }
 
-        PendingRegistration pendingByUsername = pendingRegistrationRepository.findByUsername(username).orElse(null);
-        if (pendingByUsername != null && pendingByUsername.getUsedAt() == null && !isExpired(pendingByUsername)) {
-            if (!pendingByUsername.getEmail().equals(email)) {
-                return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
-            }
+        PendingRegistration pendingByEmail = pendingRegistrationRepository.findByEmail(email).orElse(null);
+        if (pendingByEmail != null && isReusablePending(pendingByEmail)) {
+            pendingRegistrationRepository.delete(pendingByEmail);
+            pendingByEmail = null;
         }
 
-        PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
+        PendingRegistration pendingByUsername = pendingRegistrationRepository.findByUsername(username).orElse(null);
+        if (pendingByUsername != null && isReusablePending(pendingByUsername)) {
+            pendingRegistrationRepository.delete(pendingByUsername);
+
+            if (pendingByEmail != null && Objects.equals(pendingByEmail.getId(), pendingByUsername.getId())) {
+                pendingByEmail = null;
+            }
+
+            pendingByUsername = null;
+        }
+
+        if (pendingByUsername != null && !email.equals(pendingByUsername.getEmail())) {
+            return new ApiResponse<>(false, "El nombre de usuario ya está en uso", null);
+        }
+
+        PendingRegistration pending = pendingByEmail;
+
+        if (pending == null && pendingByUsername != null && email.equals(pendingByUsername.getEmail())) {
+            pending = pendingByUsername;
+        }
 
         if (pending == null) {
             pending = new PendingRegistration();
@@ -160,6 +179,10 @@ public class UserService {
 
         String email = normalizeEmail(request != null ? request.getEmail() : null);
         String password = request != null ? request.getPassword() : null;
+
+        if (email.isBlank() || password == null || password.isBlank()) {
+            return new ApiResponse<>(false, "Email y contraseña son obligatorios", null);
+        }
 
         User user = userRepository.findByEmail(email).orElse(null);
 
@@ -270,12 +293,20 @@ public class UserService {
 
         PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
 
-        if (pending == null || pending.getUsedAt() != null) {
+        if (pending == null) {
             return new ApiResponse<>(true,
                     "Si el correo existe, te hemos enviado un nuevo email de verificación",
                     null);
         }
 
+        if (isReusablePending(pending)) {
+            pendingRegistrationRepository.delete(pending);
+            return new ApiResponse<>(true,
+                    "Si el correo existe, te hemos enviado un nuevo email de verificación",
+                    null);
+        }
+
+        pending.setUsedAt(null);
         createAndSendPendingRegistrationToken(pending);
 
         return new ApiResponse<>(true, "Te hemos enviado un nuevo correo de verificación", null);
@@ -452,6 +483,10 @@ public class UserService {
     private void createAndSendPendingRegistrationToken(PendingRegistration pending) {
         String rawToken = UUID.randomUUID().toString();
 
+        if (pending.getCreatedAt() == null) {
+            pending.setCreatedAt(LocalDateTime.now());
+        }
+
         pending.setTokenHash(hashToken(rawToken));
         pending.setExpiresAt(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS));
 
@@ -498,6 +533,10 @@ public class UserService {
 
     private boolean isExpired(PendingRegistration pending) {
         return pending.getExpiresAt() == null || pending.getExpiresAt().isBefore(LocalDateTime.now());
+    }
+
+    private boolean isReusablePending(PendingRegistration pending) {
+        return pending.getUsedAt() != null || isExpired(pending);
     }
 
     private String normalizeEmail(String email) {

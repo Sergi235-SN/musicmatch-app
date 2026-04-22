@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.musicmatch.mobile.data.ApiService
 import com.musicmatch.mobile.data.repository.ChatRepository
-import com.musicmatch.mobile.model.dto.*
+import com.musicmatch.mobile.model.dto.ChatPreview
+import com.musicmatch.mobile.model.dto.MessageRequest
+import com.musicmatch.mobile.model.dto.MessageResponse
 import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,59 +31,86 @@ class ChatViewModel : ViewModel() {
     private val _userId = MutableStateFlow<Long?>(null)
     val userId = _userId.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
+
     private var token: String = ""
 
     fun load(context: Context) {
         viewModelScope.launch {
-
             token = tokenManager.getToken(context) ?: return@launch
             _userId.value = tokenManager.getUserIdFromToken(context)
 
-            refreshAll()
+            try {
+                refreshAll()
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "No se pudieron cargar los chats"
+            }
         }
     }
 
-    private fun refreshAll() {
-        viewModelScope.launch {
-            _chats.value = repo.getChats(token)
-            _pendingChats.value = repo.getPendingChats(token)
-        }
+    private suspend fun refreshAll() {
+        _chats.value = repo.getChats(token)
+        _pendingChats.value = repo.getPendingChats(token)
     }
 
     fun openChat(chatId: Long) {
         viewModelScope.launch {
+            try {
+                _messages.value = repo.getMessages(token, chatId)
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "No se pudieron cargar los mensajes"
+            }
+        }
+    }
+
+    suspend fun refreshChat(chatId: Long): Boolean {
+        return try {
             _messages.value = repo.getMessages(token, chatId)
+            true
+        } catch (e: Exception) {
+            _errorMessage.value = e.message ?: "No se pudo actualizar el chat"
+            false
         }
     }
 
     fun sendMessage(chatId: Long, text: String) {
+        if (text.isBlank()) return
+
         viewModelScope.launch {
-            repo.sendMessage(token, MessageRequest(chatId, text))
-            _messages.value = repo.getMessages(token, chatId)
+            try {
+                repo.sendMessage(token, MessageRequest(chatId, text.trim()))
+                _messages.value = repo.getMessages(token, chatId)
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "No se pudo enviar el mensaje"
+            }
         }
     }
 
-    fun acceptChat(context: Context, chatId: Long) {
+    fun acceptChat(chatId: Long) {
         viewModelScope.launch {
-            repo.acceptChat(token, chatId)
-            refreshAll()
+            try {
+                repo.acceptChat(token, chatId)
+                refreshAll()
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "No se pudo aceptar la solicitud"
+            }
         }
     }
 
-    fun rejectChat(context: Context, chatId: Long) {
+    fun rejectChat(chatId: Long) {
         viewModelScope.launch {
-            repo.rejectChat(token, chatId)
-            refreshAll()
+            try {
+                repo.rejectChat(token, chatId)
+                refreshAll()
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "No se pudo rechazar la solicitud"
+            }
         }
     }
 
-    suspend fun chatExists(chatId: Long): Boolean {
-        return try {
-            repo.getMessages(token, chatId)
-            true
-        } catch (e: Exception) {
-            false
-        }
+    fun clearError() {
+        _errorMessage.value = null
     }
 
     fun reset() {
@@ -89,6 +118,7 @@ class ChatViewModel : ViewModel() {
         _pendingChats.value = emptyList()
         _messages.value = emptyList()
         _userId.value = null
+        _errorMessage.value = null
         token = ""
     }
 }

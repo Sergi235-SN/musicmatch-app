@@ -1,29 +1,55 @@
 package com.musicmatch.mobile.navigation
 
 import android.net.Uri
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.musicmatch.mobile.ui.screens.*
-import com.musicmatch.mobile.viewmodel.*
+import com.musicmatch.mobile.ui.screens.BlockedUsersScreen
+import com.musicmatch.mobile.ui.screens.ChatDetailScreen
+import com.musicmatch.mobile.ui.screens.ChatRequestsScreen
+import com.musicmatch.mobile.ui.screens.ChatScreen
+import com.musicmatch.mobile.ui.screens.ForgotPasswordScreen
+import com.musicmatch.mobile.ui.screens.HomeScreen
+import com.musicmatch.mobile.ui.screens.LoginScreen
+import com.musicmatch.mobile.ui.screens.MatchesScreen
+import com.musicmatch.mobile.ui.screens.MusicalProfileScreen
+import com.musicmatch.mobile.ui.screens.MusicalProfileStep2Screen
+import com.musicmatch.mobile.ui.screens.ProfileScreen
+import com.musicmatch.mobile.ui.screens.PublicProfileScreen
+import com.musicmatch.mobile.ui.screens.RegisterScreen
+import com.musicmatch.mobile.ui.screens.ResetPasswordScreen
+import com.musicmatch.mobile.ui.screens.ServerConfigScreen
+import com.musicmatch.mobile.ui.screens.SplashScreen
 import com.musicmatch.mobile.ui.theme.ColorPrincipal
 import com.musicmatch.mobile.ui.theme.ColorSecundario
-import androidx.compose.ui.graphics.Color
+import com.musicmatch.mobile.viewmodel.LoginViewModel
+import com.musicmatch.mobile.viewmodel.RegisterViewModel
 
 sealed class Screen(val route: String) {
-
+    object Splash : Screen("splash")
     object ServerConfig : Screen("server_config")
     object Register : Screen("register")
     object Login : Screen("login")
@@ -32,6 +58,7 @@ sealed class Screen(val route: String) {
     object Matches : Screen("matches")
     object Chat : Screen("chat")
     object Profile : Screen("profile")
+    object BlockedUsers : Screen("blocked_users")
 
     object ForgotPassword : Screen("forgot_password")
 
@@ -79,19 +106,27 @@ private val bottomItems = listOf(
 )
 
 @Composable
-fun NavGraph(navController: NavHostController) {
-
+fun NavGraph(
+    navController: NavHostController,
+    loginViewModel: LoginViewModel
+) {
     NavHost(
         navController = navController,
-        startDestination = Screen.ServerConfig.route
+        startDestination = Screen.Splash.route
     ) {
+
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                navController = navController,
+                loginViewModel = loginViewModel
+            )
+        }
 
         composable(Screen.ServerConfig.route) {
             ServerConfigScreen(navController)
         }
 
         composable(Screen.Register.route) {
-
             val regViewModel: RegisterViewModel = viewModel()
 
             RegisterScreen(
@@ -110,7 +145,6 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Login.route) {
-
             LoginScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateRegister = {
@@ -143,7 +177,7 @@ fun NavGraph(navController: NavHostController) {
                 ?.get<String>("pending_password")
                 .orEmpty()
 
-            EmailVerificationScreen(
+            com.musicmatch.mobile.ui.screens.EmailVerificationScreen(
                 email = email,
                 password = password,
                 onContinue = { userId ->
@@ -227,7 +261,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = "chat_detail/{chatId}",
+            route = ChatDetail.route,
             arguments = listOf(navArgument("chatId") { type = NavType.LongType })
         ) { backStackEntry ->
 
@@ -245,6 +279,10 @@ fun NavGraph(navController: NavHostController) {
             MainScaffold(navController) {
                 ProfileScreen(navController = navController)
             }
+        }
+
+        composable(Screen.BlockedUsers.route) {
+            BlockedUsersScreen(navController = navController)
         }
 
         composable(
@@ -294,8 +332,7 @@ fun MainScaffold(
     navController: NavHostController,
     content: @Composable () -> Unit
 ) {
-    val currentRoute =
-        navController.currentBackStackEntryAsState().value?.destination?.route
+    val currentRoute by navController.currentBackStackEntryAsState()
 
     Scaffold(
         bottomBar = {
@@ -305,12 +342,12 @@ fun MainScaffold(
             ) {
                 bottomItems.forEach { item ->
 
-                    val selected = currentRoute == item.route
+                    val selected = currentRoute?.destination?.route == item.route
 
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
-                            if (currentRoute != item.route) {
+                            if (currentRoute?.destination?.route != item.route) {
                                 navController.navigate(item.route) {
                                     popUpTo(Screen.Home.route) {
                                         saveState = true

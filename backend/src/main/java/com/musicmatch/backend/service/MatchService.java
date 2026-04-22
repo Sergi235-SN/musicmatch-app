@@ -1,15 +1,32 @@
 package com.musicmatch.backend.service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.musicmatch.backend.dto.*;
-import com.musicmatch.backend.model.*;
-import com.musicmatch.backend.repository.*;
+import com.musicmatch.backend.dto.BlockedUserResponse;
+import com.musicmatch.backend.dto.InstrumentLevelResponse;
+import com.musicmatch.backend.dto.MatchCandidatesResponse;
+import com.musicmatch.backend.dto.ProfileCardDTO;
+import com.musicmatch.backend.dto.SwipeResponse;
+import com.musicmatch.backend.model.Chat;
+import com.musicmatch.backend.model.ChatStatus;
+import com.musicmatch.backend.model.Match;
+import com.musicmatch.backend.model.Profile;
+import com.musicmatch.backend.model.ProfileBlock;
+import com.musicmatch.backend.model.ProfileSwipe;
+import com.musicmatch.backend.model.Style;
+import com.musicmatch.backend.repository.ChatRepository;
+import com.musicmatch.backend.repository.MatchRepository;
+import com.musicmatch.backend.repository.ProfileBlockRepository;
+import com.musicmatch.backend.repository.ProfileRepository;
+import com.musicmatch.backend.repository.ProfileSwipeRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -204,7 +221,9 @@ public class MatchService {
         Profile me = profileRepository.findById(userId).orElseThrow();
         Profile target = profileRepository.findById(targetId).orElseThrow();
 
-        blockRepository.save(new ProfileBlock(me, target));
+        if (!blockRepository.existsByBlockerAndBlocked(me, target)) {
+            blockRepository.save(new ProfileBlock(me, target));
+        }
 
         swipeRepository.deleteByFromProfileAndToProfile(me, target);
         swipeRepository.deleteByFromProfileAndToProfile(target, me);
@@ -224,6 +243,19 @@ public class MatchService {
         Profile target = profileRepository.findById(targetId).orElseThrow();
 
         blockRepository.deleteByBlockerAndBlocked(me, target);
+    }
+
+    public List<BlockedUserResponse> getBlockedUsers(Long userId) {
+        Profile me = profileRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        return blockRepository.findByBlocker(me)
+            .stream()
+            .map(block -> new BlockedUserResponse(
+                block.getBlocked().getId(),
+                block.getBlocked().getUser().getUsername()
+            ))
+            .toList();
     }
 
     private void createChatFromMatch(Profile a, Profile b, Match match) {

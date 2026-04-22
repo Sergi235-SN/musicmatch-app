@@ -13,8 +13,8 @@ import com.musicmatch.mobile.model.dto.*
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.utils.TokenManager
 import kotlinx.coroutines.launch
-import okhttp3.MultipartBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
@@ -22,6 +22,10 @@ class MusicalProfileViewModel(
     private val repository: UserRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+
+    companion object {
+        private const val MAX_AVATAR_SIZE_BYTES = 5_000_000L
+    }
 
     val selectedInstruments =
         mutableStateListOf<Pair<MusicalOptionDTO, ExperienceLevel>>()
@@ -41,6 +45,7 @@ class MusicalProfileViewModel(
     var availableStyles by mutableStateOf<List<MusicalOptionDTO>>(emptyList())
 
     var isLoading by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
 
     var username by mutableStateOf<String?>(null)
     var email by mutableStateOf<String?>(null)
@@ -53,40 +58,47 @@ class MusicalProfileViewModel(
         val token = getToken(context) ?: return
 
         viewModelScope.launch {
-            val options = repository.getMusicalOptions(token)
-            val cities = repository.getCities(token)
-            val profile = repository.getCurrentUser(token)
+            try {
+                errorMessage = null
 
-            availableInstruments = options.instruments
-            availableStyles = options.styles
-            availableCities = cities
+                val options = repository.getMusicalOptions(token)
+                val cities = repository.getCities(token)
+                val profile = repository.getCurrentUser(token)
 
-            val data = profile.data ?: return@launch
+                availableInstruments = options.instruments
+                availableStyles = options.styles
+                availableCities = cities
 
-            username = data.username
-            email = data.email
-            biography = data.biography ?: ""
-            selectedCityId = data.cityId
-            globalExperience = data.experienceLevel ?: ExperienceLevel.PRINCIPIANTE
+                val data = profile.data ?: return@launch
 
-            selectedStyles.clear()
-            data.styleIds?.forEach { id ->
-                availableStyles.find { it.id == id }?.let {
-                    selectedStyles.add(it)
+                username = data.username
+                email = data.email
+                biography = data.biography ?: ""
+                selectedCityId = data.cityId
+                globalExperience = data.experienceLevel ?: ExperienceLevel.PRINCIPIANTE
+
+                selectedStyles.clear()
+                data.styleIds?.forEach { id ->
+                    availableStyles.find { it.id == id }?.let {
+                        selectedStyles.add(it)
+                    }
                 }
-            }
 
-            selectedInstruments.clear()
-            data.instruments?.forEach { inst ->
-                availableInstruments.find { it.id == inst.instrumentId }?.let { option ->
-                    selectedInstruments.add(
-                        option to (inst.level ?: ExperienceLevel.PRINCIPIANTE)
-                    )
+                selectedInstruments.clear()
+                data.instruments?.forEach { inst ->
+                    availableInstruments.find { it.id == inst.instrumentId }?.let { option ->
+                        selectedInstruments.add(
+                            option to (inst.level ?: ExperienceLevel.PRINCIPIANTE)
+                        )
+                    }
                 }
-            }
 
-            currentAvatarUrl = data.profilePicture?.let {
-                NetworkConfig.getAvatarUrl(it)
+                currentAvatarUrl = data.profilePicture?.let {
+                    NetworkConfig.getAvatarUrl(it)
+                }
+
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "No se pudo cargar el perfil"
             }
         }
     }
@@ -96,6 +108,7 @@ class MusicalProfileViewModel(
 
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
 
             try {
                 val request = UpdateProfileRequest(
@@ -109,6 +122,8 @@ class MusicalProfileViewModel(
                 repository.updateProfile(token, request)
                 onNext()
 
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "No se pudieron guardar los cambios"
             } finally {
                 isLoading = false
             }
@@ -120,23 +135,12 @@ class MusicalProfileViewModel(
 
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
 
             try {
-
                 imageUri?.let { uri ->
-                    val file = uriToFile(context, uri)
-
-                    val body = MultipartBody.Part.createFormData(
-                        "file",
-                        file.name,
-                        file.asRequestBody("image/*".toMediaTypeOrNull())
-                    )
-
-                    val filename = repository.uploadAvatar(token, body)
-
-                    if (!filename.isNullOrEmpty()) {
-                        currentAvatarUrl = NetworkConfig.getAvatarUrl(filename)
-                    }
+                    val uploadedPath = uploadAvatarIfNeeded(context, token, uri)
+                    currentAvatarUrl = NetworkConfig.getAvatarUrl(uploadedPath)
                 }
 
                 val request = UpdateProfileRequest(
@@ -145,9 +149,10 @@ class MusicalProfileViewModel(
                 )
 
                 repository.updateProfile(token, request)
-
                 onFinish()
 
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "No se pudo completar el perfil"
             } finally {
                 isLoading = false
             }
@@ -159,21 +164,12 @@ class MusicalProfileViewModel(
 
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
 
             try {
-
-                var uploadedFilename: String? = null
-
                 imageUri?.let { uri ->
-                    val file = uriToFile(context, uri)
-
-                    val body = MultipartBody.Part.createFormData(
-                        "file",
-                        file.name,
-                        file.asRequestBody("image/*".toMediaTypeOrNull())
-                    )
-
-                    uploadedFilename = repository.uploadAvatar(token, body)
+                    val uploadedPath = uploadAvatarIfNeeded(context, token, uri)
+                    currentAvatarUrl = NetworkConfig.getAvatarUrl(uploadedPath)
                 }
 
                 val request = UpdateProfileRequest(
@@ -187,27 +183,54 @@ class MusicalProfileViewModel(
                 )
 
                 repository.updateProfile(token, request)
-
-                uploadedFilename?.let {
-                    currentAvatarUrl = NetworkConfig.getAvatarUrl(it)
-                }
-
                 onFinish()
 
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "No se pudieron guardar los cambios"
             } finally {
                 isLoading = false
             }
         }
     }
 
-    private fun uriToFile(context: Context, uri: Uri): File {
-        val inputStream = context.contentResolver.openInputStream(uri)!!
-        val file = File.createTempFile("upload", ".jpg", context.cacheDir)
-        file.outputStream().use { inputStream.copyTo(it) }
-        return file
+    fun clearError() {
+        errorMessage = null
     }
 
+    private suspend fun uploadAvatarIfNeeded(
+        context: Context,
+        token: String,
+        uri: Uri
+    ): String {
+        val file = uriToFile(context, uri)
 
+        if (file.length() > MAX_AVATAR_SIZE_BYTES) {
+            throw IllegalArgumentException("La imagen supera el tamaño máximo de 5 MB")
+        }
+
+        val body = MultipartBody.Part.createFormData(
+            "file",
+            file.name,
+            file.asRequestBody("image/*".toMediaTypeOrNull())
+        )
+
+        return repository.uploadAvatar(token, body)
+    }
+
+    private fun uriToFile(context: Context, uri: Uri): File {
+        val inputStream = context.contentResolver.openInputStream(uri)
+            ?: throw IllegalStateException("No se pudo abrir la imagen seleccionada")
+
+        val file = File.createTempFile("upload", ".jpg", context.cacheDir)
+
+        inputStream.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        return file
+    }
 
     class Factory(
         private val repository: UserRepository,
