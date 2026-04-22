@@ -1,7 +1,7 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
-    driverClassName: org.h2.Driver
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
     username: sa
     password:
 
@@ -9,3 +9,19 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
+    show-sql: false
+
+mail:
+  enabled: false
+
+jwt:
+  secret: test_secret_key_very_long_for_tests_123456789
+  access-expiration: 900000
+  refresh-expiration: 604800000
+
+app:
+  mail:
+    from: test@musicmatch.com
+  auth:
+    verify-email-url-base: http://localhost:8080/api/auth/verify-email?token=
+    reset-password-url-base: http://localhost:8080/api/auth/reset-password-page?token=
