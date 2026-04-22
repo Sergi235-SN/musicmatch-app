@@ -235,6 +235,32 @@ Este modo es recomendable cuando:
 - se está probando el backend en local,
 - solo se quiere validar la lógica sin enviar emails reales.
 
+#### ¿Cómo se obtienen entonces los enlaces de verificación o recuperación?
+
+Cuando `MAIL_ENABLED=false`, el backend imprime en consola el enlace correspondiente de verificación de cuenta o restablecimiento de contraseña.
+
+Si la aplicación se está ejecutando con Docker, estos enlaces pueden consultarse en los **logs del contenedor del backend**.
+
+Si se ha arrancado con:
+
+    docker-compose up
+
+los enlaces se verán directamente en la terminal.
+
+Si se ha arrancado en segundo plano con:
+
+    docker-compose up -d
+
+pueden consultarse con:
+
+    docker-compose logs -f
+
+o bien solo los del backend con:
+
+    docker-compose logs -f backend
+
+En este modo, el usuario final no recibe ningún correo, por lo que el proceso de verificación o recuperación depende de consultar manualmente los logs del backend.
+
 ---
 
 ## 🔗 URLs de verificación y recuperación
@@ -329,8 +355,8 @@ Si responde `ok`, el backend está funcionando correctamente.
     ├── mobile/
     ├── infrastructure/
     │   └── docker-compose.yml
-    ├── backend-image.tar
-    ├── MusicMatch-oficial.apk
+    ├── .gitignore
+    ├── LICENSE
     └── README.md
 
 ---
@@ -366,7 +392,17 @@ Comprobar:
 - que el proveedor de correo permita acceso SMTP,
 - que `APP_VERIFY_EMAIL_URL_BASE` y `APP_RESET_PASSWORD_URL_BASE` estén bien configuradas.
 
-### 4. Los datos iniciales no aparecen
+### 4. En modo sin SMTP no llega ningún correo
+
+Esto es el comportamiento esperado cuando:
+
+    MAIL_ENABLED=false
+
+En ese caso, los enlaces de verificación y recuperación deben consultarse manualmente en los logs del backend:
+
+    docker-compose logs -f backend
+
+### 5. Los datos iniciales no aparecen
 
 Si ya existían datos previos en la base de datos, el inicializador no volverá a insertarlos.
 
@@ -375,7 +411,7 @@ Para forzar un reinicio completo:
     docker-compose down -v
     docker-compose up
 
-### 5. La verificación por correo o el cambio de contraseña no funciona
+### 6. La verificación por correo o el cambio de contraseña no funciona
 
 Revisar:
 
