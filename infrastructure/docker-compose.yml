@@ -34,6 +34,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/musicmatch?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false
       DB_USER: musicuser
       DB_PASS: musicpass
+      JWT_SECRET: debes-configurar-aqui-una-clave-larga-y-segura-para-firmar-tokens-jwt
 
 volumes:
   mysql_data:
