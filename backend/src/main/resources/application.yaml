@@ -8,7 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${show_sql:true}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -45,4 +45,7 @@ app:
     from: ${APP_MAIL_FROM:no-reply@musicmatch.com}
   auth:
     verify-email-url-base: ${APP_VERIFY_EMAIL_URL_BASE:http://localhost:8080/api/auth/verify-email?token=}
-    reset-password-url-base: ${APP_RESET_PASSWORD_URL_BASE:musicmatch://reset-password?token=}
+    reset-password-url-base: ${APP_RESET_PASSWORD_URL_BASE:http://localhost:8080/api/auth/reset-password-page?token=}
+
+mail:
+  enabled: ${MAIL_ENABLED:false}
