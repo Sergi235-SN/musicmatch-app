@@ -1,47 +1,47 @@
-# 🎵 MusicMatch
+# MusicMatch
 
 **MusicMatch** es una aplicación orientada a conectar músicos según sus intereses, instrumentos, estilos musicales y nivel de experiencia.  
 El proyecto está compuesto por un **backend desarrollado con Spring Boot**, una **aplicación Android** y una infraestructura de despliegue basada en **Docker**.
 
 ---
 
-## 📌 Descripción general
+## Descripción general
 
 La aplicación permite que los usuarios puedan:
 
-- registrarse y verificar su cuenta por correo,
-- configurar su perfil musical,
-- buscar otros músicos por filtros,
-- recibir coincidencias,
-- iniciar conversaciones con otros usuarios compatibles.
+- Registrarse y verificar su cuenta por correo.
+- Configurar su perfil musical.
+- Buscar otros músicos por filtros.
+- Recibir coincidencias.
+- Iniciar conversaciones con otros usuarios compatibles.
 
 Esta versión está preparada para su distribución y despliegue como parte del **Trabajo de Fin de Grado (TFG)**.
 
 ---
 
-## 📦 Contenido del release
+## Contenido del release
 
 Este paquete incluye:
 
-- `backend-image.tar` → imagen Docker del backend
-- `MusicMatch-oficial.apk` → aplicación Android
-- `docker-compose.yml` → orquestación de servicios
-- `README.md` → guía de instalación y configuración
+- `backend-image.tar` -> Imagen Docker del backend
+- `MusicMatch-oficial.apk` -> Aplicación Android
+- `docker-compose.yml` -> Orquestación de servicios
+- `README.md` -> Guía de instalación y configuración
 
 ---
 
-## ⚙️ Requisitos previos
+## Requisitos previos
 
 Para ejecutar el proyecto se necesita:
 
-- **Docker** o **Docker Desktop**
-- **Docker Compose**
-- un dispositivo Android o emulador para instalar la APK
-- conexión de red entre el dispositivo Android y el equipo donde se ejecuta el backend
+- **Docker** o **Docker Desktop**.
+- **Docker Compose**.
+- Un dispositivo Android o emulador para instalar la APK.
+- Conexión de red entre el dispositivo Android y el equipo donde se ejecuta el backend.
 
 ---
 
-## 🚀 Puesta en marcha
+## Puesta en marcha
 
 ### 1. Descargar y descomprimir
 
@@ -61,11 +61,11 @@ Descargar el release y descomprimir su contenido en una carpeta local.
 
 Antes de levantar los servicios, conviene revisar las variables de entorno, especialmente si se va a usar correo real o si el despliegue no es local.
 
-Las variables pueden definirse:
+Las variables pueden definirse de varias formas:
 
-- en el archivo `docker-compose.yml`,
-- en un archivo `.env`,
-- o directamente en el entorno del sistema.
+- En el archivo `docker-compose.yml`.
+- En un archivo `.env` externo.
+- Directamente en el entorno del sistema.
 
 ### 4. Levantar los servicios
 
@@ -77,13 +77,13 @@ Si se desea ejecutar en segundo plano:
 
 ---
 
-## 🔐 Configuración principal del backend
+## Configuración principal del backend
 
 El backend admite configuración externa mediante variables de entorno.
 
 ---
 
-## 🗄️ Variables de base de datos
+## Variables de base de datos
 
 ### `DB_URL`
 URL de conexión a la base de datos MySQL.
@@ -104,7 +104,7 @@ Contraseña de la base de datos.
 
 ---
 
-## 🧩 Configuración JPA / Hibernate
+## Configuración JPA / Hibernate
 
 ### `SHOW_SQL`
 Activa o desactiva la impresión de consultas SQL en consola.
@@ -119,7 +119,7 @@ o
 
 ---
 
-## 🔑 Configuración JWT
+## Configuración JWT
 
 ### `JWT_SECRET`
 Clave secreta usada para firmar los tokens JWT.
@@ -150,7 +150,7 @@ Equivale a 7 días.
 
 ---
 
-## ✉️ Configuración del correo
+## Configuración del correo
 
 MusicMatch puede funcionar de dos maneras distintas con respecto al envío de correos:
 
@@ -224,16 +224,16 @@ Se activa así:
 
 Cuando SMTP está desactivado:
 
-- no se intenta conectar a un proveedor de correo,
-- el backend usa un servicio de pruebas o mock,
-- los correos no llegan al usuario,
-- resulta útil para desarrollo local o pruebas internas.
+- No se intenta conectar a un proveedor de correo.
+- El backend usa un servicio de pruebas o mock.
+- Los correos no llegan al usuario.
+- Resulta útil para desarrollo local o pruebas internas.
 
 Este modo es recomendable cuando:
 
-- todavía no se dispone de una cuenta SMTP configurada,
-- se está probando el backend en local,
-- solo se quiere validar la lógica sin enviar emails reales.
+- Todavía no se dispone de una cuenta SMTP configurada.
+- Se está probando el backend en local.
+- Solo se quiere validar la lógica sin enviar emails reales.
 
 #### ¿Cómo se obtienen entonces los enlaces de verificación o recuperación?
 
@@ -263,7 +263,7 @@ En este modo, el usuario final no recibe ningún correo, por lo que el proceso d
 
 ---
 
-## 🔗 URLs de verificación y recuperación
+## URLs de verificación y recuperación
 
 Estas variables determinan a qué dirección se envía al usuario cuando pulsa el botón del correo.
 
@@ -285,7 +285,7 @@ Ejemplo:
 
 ---
 
-## 🗄️ Base de datos
+## Base de datos
 
 ### Creación del esquema
 
@@ -295,9 +295,9 @@ La base de datos se configura automáticamente mediante Hibernate al arrancar la
 
 El backend incluye un inicializador que inserta automáticamente:
 
-- instrumentos,
-- estilos musicales,
-- ciudades.
+- Instrumentos.
+- Estilos musicales.
+- Ciudades.
 
 Estos datos **solo se insertan si la base de datos está vacía**.
 
@@ -310,7 +310,7 @@ Si se desea eliminar volúmenes y reconstruir el estado inicial:
 
 ---
 
-## 📱 Aplicación Android
+## Aplicación Android
 
 La aplicación cliente se encuentra en el archivo:
 
@@ -334,7 +334,7 @@ El backend responderá por defecto en:
 
 ---
 
-## 🔍 Comprobación del backend
+## Comprobación del backend
 
 Endpoint de prueba:
 
@@ -348,7 +348,7 @@ Si responde `ok`, el backend está funcionando correctamente.
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
     MusicMatch/
     ├── backend/
@@ -361,7 +361,7 @@ Si responde `ok`, el backend está funcionando correctamente.
 
 ---
 
-## ⚠️ Problemas comunes
+## Problemas comunes
 
 ### 1. Error al cargar la imagen Docker
 
@@ -377,20 +377,20 @@ En Linux/macOS:
 
 Comprobar:
 
-- que Docker esté levantado,
-- que el backend esté corriendo en el puerto `8080`,
-- que la IP introducida en la app sea correcta,
-- que el móvil y el servidor estén en la misma red,
-- que no haya firewall bloqueando el puerto.
+- Que Docker esté levantado.
+- Que el backend esté corriendo en el puerto `8080`.
+- Que la IP introducida en la app sea correcta.
+- Que el móvil y el servidor estén en la misma red.
+- Que no haya firewall bloqueando el puerto.
 
 ### 3. No se reciben correos de verificación o recuperación
 
 Comprobar:
 
-- que `MAIL_ENABLED=true`,
-- que las credenciales SMTP sean correctas,
-- que el proveedor de correo permita acceso SMTP,
-- que `APP_VERIFY_EMAIL_URL_BASE` y `APP_RESET_PASSWORD_URL_BASE` estén bien configuradas.
+- Que `MAIL_ENABLED=true`.
+- Que las credenciales SMTP sean correctas.
+- Que el proveedor de correo permita acceso SMTP.
+- Que `APP_VERIFY_EMAIL_URL_BASE` y `APP_RESET_PASSWORD_URL_BASE` estén bien configuradas.
 
 ### 4. En modo sin SMTP no llega ningún correo
 
@@ -422,7 +422,7 @@ Estas variables deben apuntar a una dirección válida y accesible desde el corr
 
 ---
 
-## 🛠️ Tecnologías empleadas
+## Tecnologías empleadas
 
 - **Spring Boot**
 - **Spring Security**
@@ -436,19 +436,21 @@ Estas variables deben apuntar a una dirección válida y accesible desde el corr
 
 ---
 
-## 📚 Contexto académico
+## Contexto académico
 
 Este proyecto ha sido desarrollado como parte de un **Trabajo de Fin de Grado (TFG)** del ciclo **Desarrollo de Aplicaciones Multiplataforma (DAM)**, integrando conocimientos relacionados con:
 
-- desarrollo backend y frontend,
-- autenticación segura,
-- persistencia de datos,
-- despliegue en contenedores,
-- integración de servicios,
-- diseño de una arquitectura cliente-servidor.
+- Desarrollo backend y frontend.
+- Autenticación segura.
+- Persistencia de datos.
+- Despliegue en contenedores.
+- Integración de servicios.
+- Diseño de una arquitectura cliente-servidor.
 
 ---
 
-## 👨‍💻 Autor
+## Autor
 
-**Sergio Sánchez**
+**Sergio Sánchez Niño**
+
+>I.E.S. Castillo de Luna
