@@ -132,7 +132,7 @@ public class MatchService {
             .filter(p -> !alreadyMatched(me, p))
             .filter(p -> !alreadyLiked(me, p))
             .filter(p -> !recentlyDisliked(me, p))
-            .filter(p -> score(me, p) >= 40)
+            .filter(p -> score(me, p) >= 80)
             .map(p -> new ProfileCardDTO(
                 p.getId(),
                 p.getUser().getUsername(),

@@ -95,12 +95,12 @@ fun PublicProfileScreen(
 
                 profile == null -> {
                     Text(
-                        viewModel.error ?: "Usuario no encontrado",
+                        text = viewModel.error ?: "Usuario no encontrado",
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
-                profile?.blockedMe == true -> {
+                profile.blockedMe == true -> {
                     Text(
                         text = "Este usuario te ha bloqueado",
                         color = Color.Gray,
@@ -166,16 +166,19 @@ fun PublicProfileScreen(
 
                                 Column {
                                     Text(
-                                        profile.username,
+                                        text = profile.username ?: "Usuario",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 20.sp,
                                         color = ColorTexto
                                     )
 
-                                    Text(profile.cityName ?: "", color = Color.Gray)
+                                    Text(
+                                        text = profile.cityName ?: "",
+                                        color = Color.Gray
+                                    )
 
                                     Text(
-                                        profile.experienceLevel.name,
+                                        text = profile.experienceLevel?.name ?: "",
                                         color = Color.Gray
                                     )
                                 }
@@ -317,12 +320,12 @@ fun PublicProfileScreen(
                     .background(ColorPrincipal)
             )
 
-            if (showBlockDialog) {
+            if (showBlockDialog && profile != null) {
                 AlertDialog(
                     onDismissRequest = { showBlockDialog = false },
                     confirmButton = {
                         TextButton(onClick = {
-                            viewModel.block(token, profile!!.id)
+                            viewModel.block(token, profile.id)
                             showBlockDialog = false
                         }) {
                             Text("Bloquear")
@@ -338,12 +341,12 @@ fun PublicProfileScreen(
                 )
             }
 
-            if (showUnblockDialog) {
+            if (showUnblockDialog && profile != null) {
                 AlertDialog(
                     onDismissRequest = { showUnblockDialog = false },
                     confirmButton = {
                         TextButton(onClick = {
-                            viewModel.unblock(token, profile!!.id)
+                            viewModel.unblock(token, profile.id)
                             showUnblockDialog = false
                         }) {
                             Text("Desbloquear")

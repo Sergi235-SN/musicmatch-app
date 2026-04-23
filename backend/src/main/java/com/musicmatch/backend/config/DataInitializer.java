@@ -107,7 +107,7 @@ public class DataInitializer {
                     new City("Algeciras"),
                     new City("Arcos de la Frontera"),
                     new City("Barbate"),
-                    new City("Barrios Los"),
+                    new City("Los Barrios"),
                     new City("Benalup-Casas Viejas"),
                     new City("Cadiz"),
                     new City("Chiclana de la Frontera"),
@@ -127,7 +127,7 @@ public class DataInitializer {
                     new City("Rota"),
                     new City("San Martin del Tesorillo"),
                     new City("Trebujena"),
-                    new City("Puerto de Santa Maria"),
+                    new City("San Lucar de Barrameda"),
                     new City("Jimena de la Frontera")
                 ));
             }

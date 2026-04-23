@@ -90,10 +90,13 @@ fun ProfileScreen(
     if (showInstrumentDialog) {
         SelectionDialog(
             title = "Editar instrumentos",
-            availableOptions = viewModel.availableInstruments.map { it.name },
+            availableOptions = viewModel.availableInstruments.mapNotNull { it.name },
             isInstrumentMode = true,
-            currentSelectedNames = viewModel.selectedInstruments.map { it.first.name },
-            currentInstrumentsWithLevel = viewModel.selectedInstruments.map { it.first.name to it.second },
+            currentSelectedNames = viewModel.selectedInstruments.mapNotNull { it.first.name },
+            currentInstrumentsWithLevel = viewModel.selectedInstruments.mapNotNull {
+                val name = it.first.name
+                if (name != null) name to it.second else null
+            },
             onAddInstrument = { name, level ->
                 val instrument = viewModel.availableInstruments.firstOrNull { it.name == name }
                 if (instrument != null) {
@@ -111,9 +114,9 @@ fun ProfileScreen(
     if (showStyleDialog) {
         SelectionDialog(
             title = "Editar estilos",
-            availableOptions = viewModel.availableStyles.map { it.name },
+            availableOptions = viewModel.availableStyles.mapNotNull { it.name },
             isInstrumentMode = false,
-            currentSelectedNames = viewModel.selectedStyles.map { it.name },
+            currentSelectedNames = viewModel.selectedStyles.mapNotNull { it.name },
             onAddStyle = { name ->
                 val style = viewModel.availableStyles.firstOrNull { it.name == name }
                 if (style != null && !viewModel.selectedStyles.contains(style)) {
@@ -267,7 +270,7 @@ fun ProfileScreen(
                 ) {
                     viewModel.availableCities.forEach { city ->
                         DropdownMenuItem(
-                            text = { Text(city.name) },
+                            text = { Text(city.name ?: "Ciudad") },
                             onClick = {
                                 viewModel.selectedCityId = city.id
                                 expandedCity = false
@@ -328,7 +331,7 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 viewModel.selectedInstruments.take(6).forEach { (item, level) ->
-                    SmartChip(text = item.name, level = level)
+                    SmartChip(text = item.name ?: "Instrumento", level = level)
                 }
                 if (viewModel.selectedInstruments.size > 6) {
                     SmartChip(text = "+${viewModel.selectedInstruments.size - 6}")
@@ -353,7 +356,7 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 viewModel.selectedStyles.take(6).forEach { item ->
-                    SmartChip(text = item.name)
+                    SmartChip(text = item.name ?: "Estilo")
                 }
                 if (viewModel.selectedStyles.size > 6) {
                     SmartChip(text = "+${viewModel.selectedStyles.size - 6}")
