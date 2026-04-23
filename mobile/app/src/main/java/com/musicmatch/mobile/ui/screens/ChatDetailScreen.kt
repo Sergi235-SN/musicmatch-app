@@ -29,6 +29,7 @@ import com.musicmatch.mobile.ui.theme.ColorSecundario
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.viewmodel.ChatViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +90,8 @@ fun ChatDetailScreen(
                                 AsyncImage(
                                     model = NetworkConfig.getAvatarUrl(chat.otherProfileImage),
                                     contentDescription = null,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
                                 )
                             } else {
                                 Icon(

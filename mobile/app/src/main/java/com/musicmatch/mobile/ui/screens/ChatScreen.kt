@@ -24,6 +24,7 @@ import com.musicmatch.mobile.model.dto.ChatPreview
 import com.musicmatch.mobile.ui.theme.*
 import com.musicmatch.mobile.utils.NetworkConfig
 import com.musicmatch.mobile.viewmodel.ChatViewModel
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,7 +139,8 @@ fun ChatItem(
                     AsyncImage(
                         model = NetworkConfig.getAvatarUrl(chat.otherProfileImage),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     Icon(Icons.Default.Person, null, tint = Color.Gray)
