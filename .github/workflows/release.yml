@@ -73,18 +73,18 @@ jobs:
         run: |
           cd mobile
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: List files for debugging
         run: find mobile -name "*.apk"
 
       - name: Rename APK
-        run: mv mobile/app/build/outputs/apk/release/app-release-unsigned.apk mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
+        run: mv mobile/app/build/outputs/apk/debug/app-debug.apk mobile/app/build/outputs/apk/debug/MusicMatch-oficial.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: mobile/app/build/outputs/apk/release/MusicMatch-oficial.apk
+          path: mobile/app/build/outputs/apk/debug/MusicMatch-oficial.apk
 
 
   release:
