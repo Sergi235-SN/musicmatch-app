@@ -24,12 +24,10 @@ import com.musicmatch.backend.dto.ResetPasswordRequest;
 import com.musicmatch.backend.dto.UserResponse;
 import com.musicmatch.backend.dto.VerificationState;
 import com.musicmatch.backend.dto.VerificationStatusResponse;
-import com.musicmatch.backend.model.EmailVerificationToken;
 import com.musicmatch.backend.model.PasswordResetToken;
 import com.musicmatch.backend.model.PendingRegistration;
 import com.musicmatch.backend.model.Profile;
 import com.musicmatch.backend.model.User;
-import com.musicmatch.backend.repository.EmailVerificationTokenRepository;
 import com.musicmatch.backend.repository.PasswordResetTokenRepository;
 import com.musicmatch.backend.repository.PendingRegistrationRepository;
 import com.musicmatch.backend.repository.ProfileRepository;
@@ -46,7 +44,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ProfileRepository profileRepository;
     private final JwtUtil jwtUtil;
-    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PendingRegistrationRepository pendingRegistrationRepository;
     private final EmailService emailService;
@@ -93,26 +90,7 @@ public class UserService {
 
         User existingUserByEmail = userRepository.findByEmail(email).orElse(null);
         if (existingUserByEmail != null) {
-            if (existingUserByEmail.isEmailVerified()) {
-                return new ApiResponse<>(false, "El email ya está registrado", null);
-            }
-
-            createAndSendVerificationToken(existingUserByEmail);
-
-            UserResponse response = new UserResponse(
-                    existingUserByEmail.getId(),
-                    existingUserByEmail.getUsername(),
-                    existingUserByEmail.getEmail(),
-                    null,
-                    null,
-                    false
-            );
-
-            return new ApiResponse<>(
-                    true,
-                    "Ya existía una cuenta pendiente de verificación. Te hemos enviado un nuevo correo.",
-                    response
-            );
+            return new ApiResponse<>(false, "El email ya está registrado", null);
         }
 
         User existingUserByUsername = userRepository.findByUsername(username).orElse(null);
@@ -264,12 +242,7 @@ public class UserService {
             return new ApiResponse<>(false, "Token de verificación requerido", null);
         }
 
-        ApiResponse<Void> pendingVerificationResult = verifyPendingRegistrationToken(token);
-        if (pendingVerificationResult != null) {
-            return pendingVerificationResult;
-        }
-
-        return verifyLegacyEmailToken(token);
+        return verifyPendingRegistrationToken(token);
     }
 
     @Transactional
@@ -283,12 +256,7 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user != null) {
-            if (user.isEmailVerified()) {
-                return new ApiResponse<>(true, "Tu correo ya está verificado", null);
-            }
-
-            createAndSendVerificationToken(user);
-            return new ApiResponse<>(true, "Te hemos enviado un nuevo correo de verificación", null);
+            return new ApiResponse<>(true, "Tu correo ya está verificado", null);
         }
 
         PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElse(null);
@@ -382,7 +350,7 @@ public class UserService {
                     user.getId(),
                     user.getEmail(),
                     user.isEmailVerified(),
-                    user.isEmailVerified() ? VerificationState.VERIFIED : VerificationState.PENDING
+                    VerificationState.VERIFIED
             );
 
             return new ApiResponse<>(true, "Estado de verificación obtenido", data);
@@ -417,7 +385,7 @@ public class UserService {
         PendingRegistration pending = pendingRegistrationRepository.findByTokenHash(tokenHash).orElse(null);
 
         if (pending == null) {
-            return null;
+            return new ApiResponse<>(false, "Token de verificación inválido", null);
         }
 
         if (pending.getUsedAt() != null) {
@@ -454,32 +422,6 @@ public class UserService {
         return new ApiResponse<>(true, "Correo verificado correctamente", null);
     }
 
-    private ApiResponse<Void> verifyLegacyEmailToken(String token) {
-        EmailVerificationToken verificationToken =
-                emailVerificationTokenRepository.findByToken(token).orElse(null);
-
-        if (verificationToken == null) {
-            return new ApiResponse<>(false, "Token de verificación inválido", null);
-        }
-
-        if (verificationToken.getUsedAt() != null) {
-            return new ApiResponse<>(false, "Este enlace de verificación ya fue utilizado", null);
-        }
-
-        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new ApiResponse<>(false, "El enlace de verificación ha expirado", null);
-        }
-
-        User user = verificationToken.getUser();
-        user.setEmailVerified(true);
-        userRepository.save(user);
-
-        verificationToken.setUsedAt(LocalDateTime.now());
-        emailVerificationTokenRepository.save(verificationToken);
-
-        return new ApiResponse<>(true, "Correo verificado correctamente", null);
-    }
-
     private void createAndSendPendingRegistrationToken(PendingRegistration pending) {
         String rawToken = UUID.randomUUID().toString();
 
@@ -497,22 +439,6 @@ public class UserService {
                 pending.getUsername(),
                 rawToken
         );
-    }
-
-    private void createAndSendVerificationToken(User user) {
-        emailVerificationTokenRepository.deleteAllByUser_Id(user.getId());
-
-        String token = UUID.randomUUID().toString();
-
-        EmailVerificationToken verificationToken = new EmailVerificationToken();
-        verificationToken.setToken(token);
-        verificationToken.setUser(user);
-        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS));
-        verificationToken.setUsedAt(null);
-
-        emailVerificationTokenRepository.save(verificationToken);
-
-        emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), token);
     }
 
     private void createAndSendPasswordResetToken(User user) {

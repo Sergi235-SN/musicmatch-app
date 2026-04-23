@@ -6,7 +6,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.musicmatch.backend.repository.EmailVerificationTokenRepository;
 import com.musicmatch.backend.repository.PasswordResetTokenRepository;
 import com.musicmatch.backend.repository.PendingRegistrationRepository;
 
@@ -17,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 public class TokenCleanupScheduler {
 
     private final PendingRegistrationRepository pendingRegistrationRepository;
-    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Transactional
@@ -26,7 +24,6 @@ public class TokenCleanupScheduler {
         LocalDateTime now = LocalDateTime.now();
 
         pendingRegistrationRepository.deleteAllByExpiresAtBefore(now);
-        emailVerificationTokenRepository.deleteAllByExpiresAtBefore(now);
         passwordResetTokenRepository.deleteAllByExpiresAtBefore(now);
     }
 }
