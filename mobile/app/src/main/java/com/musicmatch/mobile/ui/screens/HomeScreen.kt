@@ -96,7 +96,6 @@ fun HomeScreen(navController: NavController) {
 
             Column(Modifier.fillMaxSize().padding(12.dp)) {
 
-                // SEARCH
                 TextField(
                     value = query,
                     onValueChange = { viewModel.setQuery(it, token) },
@@ -138,7 +137,6 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(Modifier.height(10.dp))
 
-                // Filtros
                 val activeFilters = buildList {
                     instruments.forEach { id ->
                         val name = availableInstruments.find { it.id == id }?.name ?: "Inst"
@@ -187,7 +185,7 @@ fun HomeScreen(navController: NavController) {
                                 },
                                 shape = MaterialTheme.shapes.medium,
                                 colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = Color(0xFFE3F2FD), // azul suave
+                                    containerColor = Color(0xFFE3F2FD), 
                                     labelColor = Color(0xFF1565C0)
                                 )
                             )
@@ -200,7 +198,7 @@ fun HomeScreen(navController: NavController) {
                                 label = { Text("+$remainingCount") },
                                 shape = MaterialTheme.shapes.medium,
                                 colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = Color(0xFFF1F3F4), // gris suave
+                                    containerColor = Color(0xFFF1F3F4), 
                                     labelColor = Color(0xFF444444)
                                 )
                             )
@@ -210,7 +208,6 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(Modifier.height(10.dp))
 
-                // RESULTS
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
                     items(profiles) { user ->
@@ -249,13 +246,16 @@ fun HomeScreen(navController: NavController) {
                                 Spacer(Modifier.width(12.dp))
 
                                 Column {
-                                    Text(user.username, fontWeight = FontWeight.Bold)
                                     Text(
-                                        user.city ?: "",
+                                        text = user.username ?: "Usuario",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = user.city ?: "",
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        user.experienceLevel,
+                                        text = user.experienceLevel ?: "",
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -265,9 +265,6 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // =========================
-            // FLOATING FILTER BUTTON (MOVED OUT OF TOPBAR)
-            // =========================
             FloatingActionButton(
                 onClick = { showFilters = true },
                 containerColor = ColorPrincipal,
@@ -306,9 +303,7 @@ fun HomeScreen(navController: NavController) {
                         .fillMaxWidth()
                 ) {
 
-                    // =========================
-                    // TABS
-                    // =========================
+
                     TabRow(selectedTabIndex = selectedTab) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
@@ -321,14 +316,8 @@ fun HomeScreen(navController: NavController) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // =========================
-                    // TAB CONTENT
-                    // =========================
                     when (selectedTab) {
 
-                        // =====================
-                        // INSTRUMENTOS
-                        // =====================
                         0 -> {
 
                             TextField(
@@ -357,9 +346,6 @@ fun HomeScreen(navController: NavController) {
                             }
                         }
 
-                        // =====================
-                        // ESTILOS
-                        // =====================
                         1 -> {
 
                             TextField(
