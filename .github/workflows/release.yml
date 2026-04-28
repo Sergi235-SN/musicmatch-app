@@ -47,7 +47,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd backend
-          docker build -t musicmatch-backend .
+          docker build -f Dockerfile.local -t musicmatch-backend .
 
       - name: Save image
         run: docker save musicmatch-backend > backend-image.tar
