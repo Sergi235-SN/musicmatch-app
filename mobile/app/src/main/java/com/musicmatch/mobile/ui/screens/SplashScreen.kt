@@ -43,6 +43,46 @@ fun SplashScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
+        val railwayBaseUrl = "https://musicmatch-app-production.up.railway.app"
+
+        suspend fun isServerAvailable(baseUrl: String): Boolean {
+            return withContext(Dispatchers.IO) {
+                try {
+                    val cleanUrl = baseUrl.removeSuffix("/")
+                    val url = URL("$cleanUrl/api/auth/ping")
+                    val conn = url.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 2000
+                    conn.readTimeout = 2000
+                    conn.requestMethod = "GET"
+                    conn.connect()
+                    conn.responseCode == 200
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+
+        val railwayOk = isServerAvailable(railwayBaseUrl)
+
+        if (railwayOk) {
+            ServerConfig.saveIp(context, railwayBaseUrl)
+            NetworkConfig.updateIp(railwayBaseUrl)
+
+            val hasValidSession = loginViewModel.hasValidSession(context)
+
+            if (hasValidSession) {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Splash.route) { inclusive = true }
+                }
+            } else {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Splash.route) { inclusive = true }
+                }
+            }
+
+            return@LaunchedEffect
+        }
+
         NetworkConfig.init(context)
 
         val ip = ServerConfig.getIp(context)
@@ -54,19 +94,7 @@ fun SplashScreen(
             return@LaunchedEffect
         }
 
-        val serverOk = withContext(Dispatchers.IO) {
-            try {
-                val url = URL("http://$ip:8080/api/auth/ping")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 2000
-                conn.readTimeout = 2000
-                conn.requestMethod = "GET"
-                conn.connect()
-                conn.responseCode == 200
-            } catch (e: Exception) {
-                false
-            }
-        }
+        val serverOk = isServerAvailable("http://$ip:8080")
 
         if (!serverOk) {
             navController.navigate(Screen.ServerConfig.route) {
