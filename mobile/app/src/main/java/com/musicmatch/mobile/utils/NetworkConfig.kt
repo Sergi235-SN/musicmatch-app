@@ -17,7 +17,14 @@ object NetworkConfig {
     }
 
     val BASE_URL: String
-        get() = "http://$baseIp:$PORT"
+        get() = if (
+            baseIp.startsWith("http://") ||
+            baseIp.startsWith("https://")
+        ) {
+            baseIp.removeSuffix("/")
+        } else {
+            "http://$baseIp:$PORT"
+        }
 
     fun getAvatarUrl(value: String): String {
         val cleaned = value.trim()
@@ -48,8 +55,6 @@ object NetworkConfig {
         if (ip.isNullOrBlank()) return ""
 
         return ip.trim()
-            .removePrefix("http://")
-            .removePrefix("https://")
             .removeSuffix("/")
     }
 }
@@ -61,8 +66,6 @@ object ServerConfig {
 
     fun saveIp(context: Context, ip: String) {
         val normalizedIp = ip.trim()
-            .removePrefix("http://")
-            .removePrefix("https://")
             .removeSuffix("/")
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
