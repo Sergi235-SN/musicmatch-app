@@ -34,12 +34,6 @@ public class User {
     @Column(nullable = false)
     private boolean emailVerified = false;
 
-    private String emailVerificationToken;
-    private LocalDateTime emailVerificationExpiry;
-
-    private String resetPasswordToken;
-    private LocalDateTime resetPasswordExpiry;
-
     private int tokenVersion = 0;
 
 }
